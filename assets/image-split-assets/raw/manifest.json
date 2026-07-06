@@ -1,0 +1,9 @@
+[
+  {
+    "name": "horse-sleep-single-hard-pixel",
+    "size": "1024x1024",
+    "quality": "low",
+    "prompt": "16-bit hard pixel art game asset matching the SUB2API horse netbar game. Low-resolution tilemap/sprite look, hard square pixels, nearest-neighbor, chunky black outlines, limited warm arcade palette. No smooth digital painting, no antialiasing, no gradients, no 3D, no photorealism, no watermark. Use a perfectly flat solid #00ff00 chroma-key background. The background must be one uniform color with no shadow, texture, floor, gradients, or light spill. Do not use #00ff00 in the subject. Keep the subject fully separated with generous padding. One standalone cute brown chibi horse sleeping-at-work sprite, back view facing upward toward a CRT monitor. Sitting on a small office chair, head drooping slightly, tiny Z marks, compact seated silhouette. No monitor, no desk, no room, no text.",
+    "path": "assets\\image-split-assets\\raw\\horse-sleep-single-hard-pixel.png"
+  }
+]

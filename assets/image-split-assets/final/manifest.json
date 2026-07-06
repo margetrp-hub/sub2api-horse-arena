@@ -1,0 +1,35 @@
+{
+  "background": "empty-netbar-background-hard-pixel.png",
+  "workstation": {
+    "file": "single-crt-workstation-hard-pixel.png",
+    "width": 260,
+    "height": 210,
+    "screenRect": {
+      "x": 93,
+      "y": 19,
+      "width": 45,
+      "height": 42
+    }
+  },
+  "horseWorking": {
+    "file": "horse-working-sheet-hard-pixel.png",
+    "frameWidth": 150,
+    "frameHeight": 120,
+    "frames": 4
+  },
+  "horseGaming": {
+    "file": "horse-gaming-single-hard-pixel.png",
+    "width": 150,
+    "height": 120
+  },
+  "horseSleep": {
+    "file": "horse-sleep-single-hard-pixel.png",
+    "width": 150,
+    "height": 120
+  },
+  "cowBoss": {
+    "file": "cow-boss-single-hard-pixel.png",
+    "width": 170,
+    "height": 145
+  }
+}

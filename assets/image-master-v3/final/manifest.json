@@ -1,0 +1,215 @@
+{
+  "source": "image-master-v3 raw assets generated with the Image API, chroma keyed and normalized locally",
+  "background": {
+    "file": "assets\\image-master-v3\\final\\background-empty-v3.png",
+    "size": [
+      1536,
+      864
+    ]
+  },
+  "stations": [
+    {
+      "name": "working",
+      "sheet": "assets\\image-master-v3\\final\\station-working-sheet.png",
+      "frame": [
+        320,
+        260
+      ],
+      "frames": 4,
+      "screen": {
+        "x": 154,
+        "y": 22,
+        "w": 75,
+        "h": 70
+      },
+      "rects": [
+        [
+          155,
+          22,
+          75,
+          70
+        ],
+        [
+          154,
+          22,
+          76,
+          70
+        ],
+        [
+          154,
+          22,
+          75,
+          70
+        ],
+        [
+          154,
+          22,
+          75,
+          70
+        ]
+      ]
+    },
+    {
+      "name": "gaming",
+      "sheet": "assets\\image-master-v3\\final\\station-gaming-sheet.png",
+      "frame": [
+        320,
+        260
+      ],
+      "frames": 4,
+      "screen": {
+        "x": 19,
+        "y": 95,
+        "w": 155,
+        "h": 47
+      },
+      "rects": [
+        [
+          0,
+          97,
+          320,
+          47
+        ],
+        [
+          1,
+          107,
+          67,
+          38
+        ],
+        [
+          10,
+          102,
+          107,
+          46
+        ],
+        [
+          65,
+          74,
+          127,
+          56
+        ]
+      ]
+    },
+    {
+      "name": "sleep",
+      "sheet": "assets\\image-master-v3\\final\\station-sleep-sheet.png",
+      "frame": [
+        320,
+        260
+      ],
+      "frames": 4,
+      "screen": {
+        "x": 0,
+        "y": -83,
+        "w": 1,
+        "h": 1
+      },
+      "rects": [
+        [
+          0,
+          -48,
+          1,
+          1
+        ],
+        [
+          0,
+          -48,
+          1,
+          1
+        ],
+        [
+          0,
+          -47,
+          1,
+          1
+        ],
+        [
+          0,
+          -188,
+          1,
+          1
+        ]
+      ]
+    }
+  ],
+  "boss": {
+    "sheet": "assets\\image-master-v3\\final\\cow-boss-counter-sheet.png",
+    "frame": [
+      260,
+      156
+    ],
+    "frames": 4
+  },
+  "screens": [
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-01-dashboard.gif",
+      "size": [
+        75,
+        70
+      ]
+    },
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-02-api.gif",
+      "size": [
+        75,
+        70
+      ]
+    },
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-03-moba.gif",
+      "size": [
+        75,
+        70
+      ]
+    },
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-04-shooter.gif",
+      "size": [
+        75,
+        70
+      ]
+    },
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-05-video.gif",
+      "size": [
+        75,
+        70
+      ]
+    },
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-06-download.gif",
+      "size": [
+        75,
+        70
+      ]
+    },
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-07-rank.gif",
+      "size": [
+        75,
+        70
+      ]
+    },
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-08-card.gif",
+      "size": [
+        75,
+        70
+      ]
+    },
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-09-afk.gif",
+      "size": [
+        75,
+        70
+      ]
+    },
+    {
+      "file": "assets\\image-master-v3\\final\\screens\\screen-10-fishing.gif",
+      "size": [
+        75,
+        70
+      ]
+    }
+  ]
+}

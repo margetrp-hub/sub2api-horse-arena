@@ -1,0 +1,18 @@
+[
+  {
+    "name": "master-art-direction",
+    "path": "assets\\api-game-kit-v2\\raw\\master-art-direction.png",
+    "model": "gpt-image-2",
+    "size": "2048x1152",
+    "quality": "medium",
+    "prompt": "Cohesive cute Chinese indie pixel game art direction, like a polished 2D browser mini game. 32-bit pixel art, crisp square pixels, chunky readable silhouettes, clean dark outlines, warm fluorescent 1990s Chinese internet-cafe palette, orthographic three-quarter game perspective. No photorealism, no semi-realistic digital painting, no smooth vector art, no blurry gradients, no watermark. Create one complete production mockup for a token leaderboard mini game called SUB2API 马力网吧. Scene: a nostalgic 1990s Chinese internet cafe with exactly ten CRT computer desks in two rows of five, large cute chibi horse workers sitting at the computers, some working, some gaming, some sleeping or fishing, and a bossy chibi cow boss behind a small service counter. The whole image must feel like one real pixel game screenshot with consistent scale, perspective, lighting, and outlines. Use simple icon-like signs only; avoid readable Chinese text except the exact title SUB2API if it appears. No cropped characters, no tiny horses, no farmhouse, no fantasy farm."
+  },
+  {
+    "name": "background-netbar-empty",
+    "path": "assets\\api-game-kit-v2\\raw\\background-netbar-empty.png",
+    "model": "gpt-image-2",
+    "size": "1280x720",
+    "quality": "medium",
+    "prompt": "Cohesive cute Chinese indie pixel game art direction, like a polished 2D browser mini game. 32-bit pixel art, crisp square pixels, chunky readable silhouettes, clean dark outlines, warm fluorescent 1990s Chinese internet-cafe palette, orthographic three-quarter game perspective. No photorealism, no semi-realistic digital painting, no smooth vector art, no blurry gradients, no watermark. Create only the empty background layer for the same game. Scene: 1990s Chinese internet cafe interior, tiled floor, green lower wall and beige worn upper wall, fluorescent tube lights, wall fan, entrance curtain, service counter area, snack shelf, posters and price boards. Important layer rule: no computers, no desks, no chairs, no horses, no cow boss, no people, no characters. Leave the lower two-thirds open and clean for exactly ten separate workstation sprites. Avoid readable text; signs should be blank shapes, icons, or fake pixel marks only."
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "name": "background-empty-v3",
+    "size": "2048x1152",
+    "quality": "high",
+    "prompt": "Strict 16-bit pixel game art, like a polished Chinese indie browser mini game. Hard square pixels, nearest-neighbor look, chunky dark outlines, limited warm fluorescent palette, orthographic 3/4 old internet-cafe perspective. No smooth painting, no vector art, no 3D, no photorealism, no gradients, no antialiasing, no watermark. Empty background layer for the same SUB2API pixel game. A nostalgic 1990s Chinese internet cafe interior with tiled floor, green lower wall, worn beige wall, fluorescent lights, wall fan, red signboards, posters, bead curtain, snack shelf, and service counter. Important: no computers, no desks, no chairs, no horses, no cow boss, no characters, no UI panels. Leave the central and lower area open for exactly ten separate workstation sprites in two rows.",
+    "path": "assets\\image-master-v3\\raw\\background-empty-v3.png"
+  },
+  {
+    "name": "station-gaming-sheet-v3",
+    "size": "2048x512",
+    "quality": "high",
+    "prompt": "Strict 16-bit pixel game art, like a polished Chinese indie browser mini game. Hard square pixels, nearest-neighbor look, chunky dark outlines, limited warm fluorescent palette, orthographic 3/4 old internet-cafe perspective. No smooth painting, no vector art, no 3D, no photorealism, no gradients, no antialiasing, no watermark. Create the asset on a perfectly flat solid #00ff00 chroma-key background. The #00ff00 background must be one uniform color with no floor plane, no shadow, no texture, and no lighting variation. Do not use #00ff00 inside the subject. Sprite sheet layout: exactly four equal cells in one horizontal row. Every cell contains the same complete workstation group: wooden internet-cafe desk, beige CRT monitor, keyboard, mouse, computer tower, small chair/stool, and one cute brown chibi horse user seated at the desk. The screen interior of the CRT must be a perfectly flat #ff00ff rectangle in exactly the same position in all four cells; this magenta screen is a placeholder hole for later animation. The horse and desk must share one perspective and lighting, with coherent scale. The horse body must sit below the screen interior; horse head/ears must not cover the magenta screen. No room background, no UI, no text, no logos. Gaming/slacking mode: the horse wears a tiny headset and leans forward excitedly, with small head and hand movement across cells. The pose should feel like playing MOBA or FPS at the computer, but do not include real game logos.",
+    "path": "assets\\image-master-v3\\raw\\station-gaming-sheet-v3.png"
+  },
+  {
+    "name": "station-sleep-sheet-v3",
+    "size": "2048x512",
+    "quality": "high",
+    "prompt": "Strict 16-bit pixel game art, like a polished Chinese indie browser mini game. Hard square pixels, nearest-neighbor look, chunky dark outlines, limited warm fluorescent palette, orthographic 3/4 old internet-cafe perspective. No smooth painting, no vector art, no 3D, no photorealism, no gradients, no antialiasing, no watermark. Create the asset on a perfectly flat solid #00ff00 chroma-key background. The #00ff00 background must be one uniform color with no floor plane, no shadow, no texture, and no lighting variation. Do not use #00ff00 inside the subject. Sprite sheet layout: exactly four equal cells in one horizontal row. Every cell contains the same complete workstation group: wooden internet-cafe desk, beige CRT monitor, keyboard, mouse, computer tower, small chair/stool, and one cute brown chibi horse user seated at the desk. The screen interior of the CRT must be a perfectly flat #ff00ff rectangle in exactly the same position in all four cells; this magenta screen is a placeholder hole for later animation. The horse and desk must share one perspective and lighting, with coherent scale. The horse body must sit below the screen interior; horse head/ears must not cover the magenta screen. No room background, no UI, no text, no logos. AFK/sleep mode: the horse is sleepy at the desk, slumped but still seated at the computer, with subtle breathing motion across cells. Small pixel sleep marks are allowed, but no readable text.",
+    "path": "assets\\image-master-v3\\raw\\station-sleep-sheet-v3.png"
+  },
+  {
+    "name": "cow-boss-counter-sheet-v3",
+    "size": "2048x512",
+    "quality": "high",
+    "prompt": "Strict 16-bit pixel game art, like a polished Chinese indie browser mini game. Hard square pixels, nearest-neighbor look, chunky dark outlines, limited warm fluorescent palette, orthographic 3/4 old internet-cafe perspective. No smooth painting, no vector art, no 3D, no photorealism, no gradients, no antialiasing, no watermark. Create the asset on a perfectly flat solid #00ff00 chroma-key background. The #00ff00 background must be one uniform color with no floor plane, no shadow, no texture, and no lighting variation. Do not use #00ff00 inside the subject. Sprite sheet layout: exactly four equal cells in one horizontal row. Every cell contains the same bossy chibi cow boss behind a small old internet-cafe service counter, wearing a dark vest and tiny tie, pointing and talking like a company boss. Subtle mouth, arm, and head movement across the four cells. No room background, no speech bubble, no UI, no readable text.",
+    "path": "assets\\image-master-v3\\raw\\cow-boss-counter-sheet-v3.png"
+  }
+]

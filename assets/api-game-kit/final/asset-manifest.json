@@ -1,0 +1,25 @@
+{
+  "assetSource": "ohlaoo image API raw assets, locally chroma-keyed and normalized",
+  "station": {
+    "width": 220,
+    "height": 180
+  },
+  "screenRect": {
+    "x": 87,
+    "y": 31,
+    "width": 54,
+    "height": 31
+  },
+  "horse": {
+    "width": 150,
+    "height": 150,
+    "frames": 4,
+    "offsetX": 70,
+    "offsetY": 32
+  },
+  "boss": {
+    "width": 96,
+    "height": 112,
+    "frames": 4
+  }
+}

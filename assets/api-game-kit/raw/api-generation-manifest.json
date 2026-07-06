@@ -1,0 +1,32 @@
+[
+  {
+    "name": "background-netbar-empty",
+    "path": "assets\\api-game-kit\\raw\\background-netbar-empty.png",
+    "model": "gpt-image-2"
+  },
+  {
+    "name": "workstation-crt-empty",
+    "path": "assets\\api-game-kit\\raw\\workstation-crt-empty.png",
+    "model": "gpt-image-2"
+  },
+  {
+    "name": "horse-working-sheet",
+    "path": "assets\\api-game-kit\\raw\\horse-working-sheet.png",
+    "model": "gpt-image-2"
+  },
+  {
+    "name": "horse-gaming-sheet",
+    "path": "assets\\api-game-kit\\raw\\horse-gaming-sheet.png",
+    "model": "gpt-image-2"
+  },
+  {
+    "name": "horse-sleep-sheet",
+    "path": "assets\\api-game-kit\\raw\\horse-sleep-sheet.png",
+    "model": "gpt-image-2"
+  },
+  {
+    "name": "cow-boss-sheet",
+    "path": "assets\\api-game-kit\\raw\\cow-boss-sheet.png",
+    "model": "gpt-image-2"
+  }
+]

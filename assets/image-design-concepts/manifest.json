@@ -1,0 +1,9 @@
+[
+  {
+    "name": "concept-d-hard-pixel-tilemap",
+    "path": "assets\\image-design-concepts\\concept-d-hard-pixel-tilemap.png",
+    "size": "1024x1024",
+    "quality": "low",
+    "prompt": "16-bit pixel art game screenshot, hard square pixels, low-res tilemap, chunky black outlines, limited colors. No smooth painting, no antialiasing, no gradients, no 3D. SUB2API mini game in a 1990s Chinese internet cafe. Exactly 10 beige CRT computers in two rows of five. Ten same-scale cute horse workers sit at the computers. Screens are powered on and all different: code, chart, MOBA, FPS, video, download, rank, cards, AFK, fishing. Cow boss behind the back snack counter near shelves. Small pixel UI for player and top 3 token ranking. Clean playable game layout, clear separation, monitors visible, horses do not cover screen interiors. Only readable text: SUB2API."
+  }
+]

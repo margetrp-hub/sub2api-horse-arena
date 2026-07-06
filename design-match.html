@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SUB2API 马力网吧</title>
+    <link rel="stylesheet" href="./design-match.css?v=scene-loop-v6-20260630a" />
+  </head>
+  <body>
+    <main class="shell" aria-label="SUB2API 马力网吧像素小游戏">
+      <div class="game-layout">
+      <div id="stageFrame" class="stage-frame">
+        <section id="gameStage" class="game-stage" aria-label="SUB2API token 消耗排行小游戏">
+          <img class="master-bg scene-loop" src="./assets/video/scene-loop-v6.gif" alt="" />
+          <span class="room-shade" aria-hidden="true"></span>
+          <span class="scanlines" aria-hidden="true"></span>
+
+          <header class="game-hud" aria-label="游戏状态栏">
+            <section class="hud-chip profile-chip">
+              <span>今日马力</span>
+              <strong id="myRank">#6</strong>
+              <em id="myTokenMini">131.1万</em>
+            </section>
+            <section class="title-chip" aria-label="标题">
+              <strong>SUB2API</strong>
+              <span>马力网吧</span>
+            </section>
+            <section class="hud-chip ops-chip">
+              <span>在线牛马</span>
+              <strong>10</strong>
+              <em id="totalToken">1837.3万</em>
+              <button id="syncButton" type="button">刷新</button>
+            </section>
+          </header>
+
+          <div id="stations" class="stations" aria-label="十台电脑工位"></div>
+
+          <button id="boss" class="boss" type="button" aria-label="揍牛老板">
+            <span id="bossTalk" class="boss-talk">前三有券，后面的继续卷。</span>
+            <span class="boss-sprite" aria-hidden="true"></span>
+            <span class="boss-hit" aria-hidden="true"></span>
+          </button>
+
+          <footer class="bottom-hud" aria-label="选中用户详情">
+            <section>
+              <span>PLAYER</span>
+              <strong id="selectedUser">你自己</strong>
+            </section>
+            <section>
+              <span>TOKEN</span>
+              <strong id="selectedToken">131.1万 token</strong>
+            </section>
+            <section>
+              <span>STATUS</span>
+              <strong id="selectedState">工作中</strong>
+            </section>
+            <section>
+              <span>REWARD</span>
+              <strong id="selectedReward">未进入前三</strong>
+            </section>
+          </footer>
+
+          <div id="toast" class="toast" role="status" aria-live="polite"></div>
+        </section>
+      </div>
+      <aside class="rank-panel" aria-label="今日前三排名">
+        <div class="rank-title">
+          <span>TOKEN LEADERBOARD</span>
+          <strong>TOP 3</strong>
+        </div>
+        <ol id="ranking" class="ranking"></ol>
+        <section class="self-rank">
+          <span>我的位置</span>
+          <strong id="selfLine">#6 你自己</strong>
+        </section>
+        <section class="coupon">
+          <strong>每日前三兑换券</strong>
+          <span id="couponHint">选择前三名用户领取</span>
+          <button id="claimButton" type="button" disabled>未选中前三</button>
+        </section>
+      </aside>
+      </div>
+    </main>
+    <script src="./voucher-config.js"></script>
+    <script src="./design-match.js?v=scene-loop-v6-20260630a"></script>
+  </body>
+</html>

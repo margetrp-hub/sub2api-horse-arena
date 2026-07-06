@@ -1,0 +1,527 @@
+:root {
+  --stage-w: 1536px;
+  --stage-h: 1024px;
+  --scale: 1;
+  --ink: #211812;
+  --panel: #f4d88d;
+  --green: #5df19c;
+  --amber: #ffd35a;
+  --blue: #60c4ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #15130f;
+  color: #f9e7a4;
+  font-family: "Microsoft YaHei", "SimSun", monospace;
+}
+
+button {
+  font: inherit;
+}
+
+.game-shell {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.24) 1px, transparent 1px) 0 0 / 12px 12px,
+    radial-gradient(circle at 50% 15%, #2d2a20, #11100d 70%);
+}
+
+.stage-frame {
+  width: calc(var(--stage-w) * var(--scale));
+  height: calc(var(--stage-h) * var(--scale));
+  position: relative;
+}
+
+.game-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--stage-w);
+  height: var(--stage-h);
+  overflow: hidden;
+  transform: scale(var(--scale));
+  transform-origin: 0 0;
+  background: #120f0c;
+  border: 6px solid #2b2118;
+  box-shadow: 0 0 0 3px #a06b2a, 0 24px 70px rgba(0, 0, 0, 0.6);
+  image-rendering: pixelated;
+  user-select: none;
+}
+
+.scene-bg,
+.scanline {
+  position: absolute;
+  inset: 0;
+}
+
+.scene-bg {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.scanline {
+  z-index: 80;
+  pointer-events: none;
+  opacity: 0.12;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px) 0 0 / 100% 4px,
+    linear-gradient(90deg, rgba(255, 213, 97, 0.16), transparent 12%, transparent 88%, rgba(82, 255, 172, 0.12));
+  mix-blend-mode: soft-light;
+}
+
+.top-hud,
+.bottom-hud,
+.coupon-dock {
+  position: absolute;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+  background: var(--panel);
+  border: 4px solid var(--ink);
+  box-shadow: 5px 5px 0 #000, inset 0 0 0 3px rgba(255, 255, 255, 0.28);
+}
+
+.top-hud {
+  left: 28px;
+  right: 28px;
+  top: 22px;
+  min-height: 64px;
+  padding: 8px 12px;
+  gap: 16px;
+}
+
+.brand {
+  display: grid;
+  min-width: 210px;
+  line-height: 1;
+}
+
+.brand strong {
+  font-size: 28px;
+  color: #18291d;
+  text-shadow: 2px 2px 0 #f6bc35;
+}
+
+.brand span,
+.player-rank span,
+.coupon-dock span,
+.bottom-hud span {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.player-rank {
+  min-width: 128px;
+  padding: 7px 10px;
+  border: 3px solid var(--ink);
+  background: #fff1b9;
+}
+
+.player-rank strong {
+  display: block;
+  font-size: 22px;
+  color: #b92e23;
+}
+
+.ranking {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rank-card {
+  position: relative;
+  min-width: 0;
+  padding: 7px 10px 7px 44px;
+  border: 3px solid var(--ink);
+  background: #fff1b9;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.rank-medal {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: #1c1712;
+  background: var(--amber);
+  border: 3px solid var(--ink);
+  font-weight: 900;
+}
+
+.rank-card strong,
+.rank-card span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-card strong {
+  font-size: 17px;
+}
+
+.rank-card span {
+  font-size: 12px;
+}
+
+.stations {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+}
+
+.station {
+  position: absolute;
+  width: 260px;
+  height: 246px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  image-rendering: pixelated;
+  transform-origin: 50% 100%;
+}
+
+.station:hover,
+.station.is-selected {
+  filter: drop-shadow(0 0 0 #fff36a) drop-shadow(0 0 9px rgba(255, 218, 90, 0.78));
+}
+
+.station:active {
+  transform: translateY(2px);
+}
+
+.screen-slot {
+  position: absolute;
+  left: 93px;
+  top: 19px;
+  width: 45px;
+  height: 42px;
+  z-index: 1;
+  overflow: hidden;
+  background: #071114;
+}
+
+.screen-slot img {
+  display: block;
+  width: 45px;
+  height: 42px;
+  object-fit: fill;
+  image-rendering: pixelated;
+}
+
+.screen-slot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px) 0 0 / 100% 5px,
+    radial-gradient(circle at 50% 35%, rgba(93, 241, 156, 0.22), transparent 58%);
+  mix-blend-mode: screen;
+}
+
+.workstation {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 260px;
+  height: 210px;
+  z-index: 2;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+.horse-wrap {
+  position: absolute;
+  left: 52px;
+  top: 68px;
+  width: 150px;
+  height: 120px;
+  z-index: 3;
+  animation: horseBob 900ms steps(2, end) infinite;
+}
+
+.horse-sprite {
+  display: block;
+  width: 150px;
+  height: 120px;
+  background-repeat: no-repeat;
+  background-size: 600px 120px;
+  image-rendering: pixelated;
+  animation: horseFrame var(--horse-speed, 640ms) steps(4, end) infinite;
+}
+
+.station[data-mode="gaming"] .horse-wrap {
+  animation-duration: 620ms;
+}
+
+.station[data-mode="sleep"] .horse-wrap {
+  animation-duration: 1500ms;
+}
+
+.station-label,
+.token-meter {
+  position: absolute;
+  z-index: 5;
+  left: 46px;
+  pointer-events: none;
+}
+
+.station-label {
+  top: 184px;
+  min-width: 76px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px;
+  color: #1b1510;
+  background: #f5d681;
+  border: 3px solid #1b1510;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.7);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.station-label em {
+  min-width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  background: #fff7c2;
+  border: 2px solid #1b1510;
+  font-style: normal;
+}
+
+.token-meter {
+  top: 214px;
+  width: 88px;
+  height: 10px;
+  background: #1b1510;
+  border: 2px solid #1b1510;
+}
+
+.token-meter span {
+  display: block;
+  width: var(--meter, 40%);
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--green), var(--amber));
+}
+
+.boss {
+  position: absolute;
+  left: 704px;
+  top: 286px;
+  width: 170px;
+  height: 145px;
+  z-index: 35;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  image-rendering: pixelated;
+}
+
+.boss-sprite {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 170px;
+  height: 145px;
+  background: url("./assets/image-layered/generated/cow-boss-sheet.png") 0 0 / 680px 145px no-repeat;
+  animation: bossFrame 760ms steps(4, end) infinite;
+  image-rendering: pixelated;
+}
+
+.boss-hit-fx {
+  position: absolute;
+  left: 58px;
+  top: 2px;
+  width: 72px;
+  height: 72px;
+  opacity: 0;
+  background: url("./assets/frame-animation/boss/boss-hit-fx-sheet-12.png") 0 0 / 864px 72px no-repeat;
+  image-rendering: pixelated;
+}
+
+.boss.is-hit .boss-hit-fx {
+  opacity: 1;
+  animation: hitFx 420ms steps(12, end) 1;
+}
+
+.boss.is-hit .boss-sprite {
+  animation: bossFrame 360ms steps(4, end) infinite, bossShake 160ms steps(2, end) 2;
+}
+
+.boss-talk {
+  position: absolute;
+  left: -92px;
+  top: -58px;
+  min-width: 260px;
+  max-width: 320px;
+  padding: 10px 12px;
+  color: #271a12;
+  background: #fff1b9;
+  border: 4px solid #271a12;
+  box-shadow: 4px 4px 0 #000;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.boss-talk::after {
+  content: "";
+  position: absolute;
+  left: 136px;
+  bottom: -14px;
+  width: 18px;
+  height: 18px;
+  background: #fff1b9;
+  border-right: 4px solid #271a12;
+  border-bottom: 4px solid #271a12;
+  transform: rotate(45deg);
+}
+
+.coupon-dock {
+  right: 36px;
+  top: 104px;
+  width: 292px;
+  min-height: 52px;
+  padding: 7px 9px;
+  gap: 8px;
+}
+
+.coupon-dock strong {
+  color: #b92e23;
+  white-space: nowrap;
+}
+
+.coupon-dock span {
+  flex: 1;
+}
+
+.coupon-dock button,
+.bottom-hud button {
+  min-height: 34px;
+  color: #111;
+  background: var(--amber);
+  border: 3px solid #111;
+  box-shadow: 3px 3px 0 #000;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.coupon-dock button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.bottom-hud {
+  left: 28px;
+  right: 28px;
+  bottom: 14px;
+  min-height: 56px;
+  padding: 7px 12px;
+  gap: 14px;
+}
+
+.bottom-hud div {
+  min-width: 0;
+  flex: 1;
+}
+
+.bottom-hud strong {
+  display: block;
+  overflow: hidden;
+  color: #1f2418;
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bottom-hud button {
+  width: 96px;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 86px;
+  z-index: 90;
+  transform: translateX(-50%) translateY(20px);
+  min-width: 330px;
+  max-width: 620px;
+  padding: 12px 14px;
+  color: #17120d;
+  background: #fff1b9;
+  border: 4px solid #17120d;
+  box-shadow: 5px 5px 0 #000;
+  opacity: 0;
+  pointer-events: none;
+  font-size: 17px;
+  font-weight: 900;
+  transition: opacity 120ms steps(2, end), transform 120ms steps(2, end);
+}
+
+.toast.is-showing {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@keyframes horseFrame {
+  to {
+    background-position-x: -600px;
+  }
+}
+
+@keyframes horseBob {
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes bossFrame {
+  to {
+    background-position-x: -680px;
+  }
+}
+
+@keyframes hitFx {
+  to {
+    background-position-x: -864px;
+  }
+}
+
+@keyframes bossShake {
+  50% {
+    transform: translate(4px, -2px);
+  }
+}

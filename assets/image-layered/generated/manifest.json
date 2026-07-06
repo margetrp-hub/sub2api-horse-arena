@@ -1,0 +1,99 @@
+{
+  "source": "Image API-generated sprites normalized for image-layered.html",
+  "horseFrame": {
+    "width": 150,
+    "height": 120,
+    "frames": 4
+  },
+  "bossFrame": {
+    "width": 170,
+    "height": 145,
+    "frames": 4
+  },
+  "screen": {
+    "width": 45,
+    "height": 42
+  },
+  "screens": [
+    {
+      "source": "assets\\reference-master\\screens\\screen-01-dashboard.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-01-dashboard.gif",
+      "size": [
+        45,
+        42
+      ]
+    },
+    {
+      "source": "assets\\reference-master\\screens\\screen-02-api.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-02-api.gif",
+      "size": [
+        45,
+        42
+      ]
+    },
+    {
+      "source": "assets\\reference-master\\screens\\screen-03-moba.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-03-moba.gif",
+      "size": [
+        45,
+        42
+      ]
+    },
+    {
+      "source": "assets\\reference-master\\screens\\screen-04-shooter.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-04-shooter.gif",
+      "size": [
+        45,
+        42
+      ]
+    },
+    {
+      "source": "assets\\reference-master\\screens\\screen-05-video.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-05-video.gif",
+      "size": [
+        45,
+        42
+      ]
+    },
+    {
+      "source": "assets\\reference-master\\screens\\screen-06-download.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-06-download.gif",
+      "size": [
+        45,
+        42
+      ]
+    },
+    {
+      "source": "assets\\reference-master\\screens\\screen-07-rank.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-07-rank.gif",
+      "size": [
+        45,
+        42
+      ]
+    },
+    {
+      "source": "assets\\reference-master\\screens\\screen-08-card.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-08-card.gif",
+      "size": [
+        45,
+        42
+      ]
+    },
+    {
+      "source": "assets\\reference-master\\screens\\screen-09-afk.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-09-afk.gif",
+      "size": [
+        45,
+        42
+      ]
+    },
+    {
+      "source": "assets\\reference-master\\screens\\screen-10-fishing.gif",
+      "file": "assets\\image-layered\\generated\\screens\\screen-10-fishing.gif",
+      "size": [
+        45,
+        42
+      ]
+    }
+  ]
+}

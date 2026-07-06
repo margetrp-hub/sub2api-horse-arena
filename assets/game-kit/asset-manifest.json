@@ -1,0 +1,99 @@
+{
+  "world": {
+    "width": 1280,
+    "height": 720
+  },
+  "station": {
+    "width": 220,
+    "height": 180
+  },
+  "screenRect": {
+    "x": 50,
+    "y": 36,
+    "width": 78,
+    "height": 46
+  },
+  "horse": {
+    "width": 150,
+    "height": 150,
+    "frames": 4,
+    "offsetX": 72,
+    "offsetY": 34
+  },
+  "boss": {
+    "width": 96,
+    "height": 112,
+    "frames": 4
+  },
+  "stations": [
+    {
+      "x": 60,
+      "y": 270,
+      "row": "back"
+    },
+    {
+      "x": 305,
+      "y": 270,
+      "row": "back"
+    },
+    {
+      "x": 550,
+      "y": 270,
+      "row": "back"
+    },
+    {
+      "x": 795,
+      "y": 270,
+      "row": "back"
+    },
+    {
+      "x": 1040,
+      "y": 270,
+      "row": "back"
+    },
+    {
+      "x": 60,
+      "y": 470,
+      "row": "front"
+    },
+    {
+      "x": 305,
+      "y": 470,
+      "row": "front"
+    },
+    {
+      "x": 550,
+      "y": 470,
+      "row": "front"
+    },
+    {
+      "x": 795,
+      "y": 470,
+      "row": "front"
+    },
+    {
+      "x": 1040,
+      "y": 470,
+      "row": "front"
+    }
+  ],
+  "screenThemes": [
+    "dashboard",
+    "api",
+    "moba",
+    "shooter",
+    "video",
+    "download",
+    "rank",
+    "card",
+    "afk",
+    "fishing"
+  ],
+  "layerOrder": [
+    "background",
+    "screen-gif",
+    "workstation-frame",
+    "horse-sprite",
+    "labels-and-effects"
+  ]
+}

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SUB2API 马力网吧</title>
+    <link rel="stylesheet" href="./image-layered.css" />
+  </head>
+  <body>
+    <main class="game-shell" aria-label="SUB2API token 消耗像素小游戏">
+      <div id="stageFrame" class="stage-frame">
+        <section class="game-stage" id="gameStage" aria-label="SUB2API 马力网吧 Image 分层像素游戏">
+          <img class="scene-bg" src="./assets/image-split-assets/final/empty-netbar-background-hard-pixel.png" alt="" />
+          <div class="scanline" aria-hidden="true"></div>
+
+          <header class="top-hud">
+            <div class="brand">
+              <strong>SUB2API</strong>
+              <span>马力网吧</span>
+            </div>
+            <div class="player-rank">
+              <span>我的今日排名</span>
+              <strong id="myRank">#6</strong>
+            </div>
+            <ol id="ranking" class="ranking" aria-label="今日 token 前三"></ol>
+          </header>
+
+          <button id="boss" class="boss" type="button" aria-label="揍牛老板">
+            <span class="boss-sprite" aria-hidden="true"></span>
+            <span class="boss-hit-fx" aria-hidden="true"></span>
+            <span id="bossTalk" class="boss-talk">今天 token 不冲上去，谁都别下机。</span>
+          </button>
+
+          <div id="stations" class="stations" aria-label="十台电脑工位"></div>
+
+          <section class="coupon-dock" aria-label="每日前三兑换券">
+            <strong>每日前三</strong>
+            <span>可领取预置兑换券</span>
+            <button id="claimButton" type="button" disabled>选择前三用户</button>
+          </section>
+
+          <footer class="bottom-hud">
+            <div>
+              <span>PLAYER</span>
+              <strong id="selectedUser">155***4@qq.com</strong>
+            </div>
+            <div>
+              <span>TOKEN</span>
+              <strong id="selectedToken">3867.2万</strong>
+            </div>
+            <div>
+              <span>STATE</span>
+              <strong id="selectedState">工作中</strong>
+            </div>
+            <button id="syncButton" type="button">SYNC</button>
+          </footer>
+
+          <div id="toast" class="toast" role="status" aria-live="polite"></div>
+        </section>
+      </div>
+    </main>
+    <script src="./voucher-config.js"></script>
+    <script src="./image-layered.js"></script>
+  </body>
+</html>

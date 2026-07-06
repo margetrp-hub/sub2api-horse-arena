@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SUB2API 马力网吧 Canvas</title>
+    <link rel="stylesheet" href="./game-canvas.css?v=canvas-20260703a" />
+  </head>
+  <body>
+    <main class="game-shell" aria-label="SUB2API 马力网吧 Canvas 小游戏">
+      <section class="playfield" aria-label="网吧游戏画面">
+        <canvas id="gameCanvas" width="1280" height="720"></canvas>
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      </section>
+
+      <aside class="side-panel" aria-label="今日 token 排行">
+        <header class="side-header">
+          <span>TOKEN BOARD</span>
+          <strong>TOP 3</strong>
+        </header>
+        <ol id="ranking" class="ranking"></ol>
+        <section class="self-card">
+          <span>我的位置</span>
+          <strong id="selfLine">#6 你自己</strong>
+        </section>
+        <section class="coupon-card">
+          <strong>每日前三兑换券</strong>
+          <span id="couponHint">选择前三名用户领取</span>
+          <button id="claimButton" type="button" disabled>未选中前三</button>
+        </section>
+        <section class="selected-card">
+          <span>PLAYER</span>
+          <strong id="selectedUser">你自己</strong>
+          <span>TOKEN</span>
+          <strong id="selectedToken">1310.7万 token</strong>
+          <span>STATUS</span>
+          <strong id="selectedState">工作中</strong>
+        </section>
+      </aside>
+    </main>
+    <script src="./voucher-config.js?v=canvas-20260703a"></script>
+    <script src="./game-canvas.js?v=canvas-20260703a"></script>
+  </body>
+</html>

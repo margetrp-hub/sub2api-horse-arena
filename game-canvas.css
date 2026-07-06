@@ -1,0 +1,271 @@
+:root {
+  --ink: #0b0805;
+  --paper: #f1cf89;
+  --gold: #f3b43f;
+  --gold-soft: #ffe086;
+  --green: #63e990;
+  --red: #ef5d45;
+  --blue: #5bc8ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #070504;
+  color: #ffe6a4;
+  font-family: "Microsoft YaHei", "SimSun", monospace;
+}
+
+button {
+  font: inherit;
+}
+
+.game-shell {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 312px;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  background:
+    radial-gradient(circle at 42% 20%, rgba(92, 55, 26, 0.36), transparent 52%),
+    linear-gradient(180deg, #17100a, #070504 58%, #030302);
+}
+
+.playfield {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  max-height: calc(100vh - 28px);
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 4px solid var(--ink);
+  background: #120d08;
+  box-shadow:
+    inset 0 0 0 4px rgba(243, 180, 63, 0.16),
+    8px 8px 0 rgba(0, 0, 0, 0.55);
+}
+
+#gameCanvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+
+.side-panel {
+  min-width: 0;
+  height: min(100%, 680px);
+  align-self: center;
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr;
+  gap: 10px;
+  padding: 16px;
+  color: #1a120b;
+  background:
+    linear-gradient(180deg, rgba(255, 238, 171, 0.96), rgba(224, 170, 88, 0.92)),
+    var(--paper);
+  border: 4px solid var(--ink);
+  box-shadow:
+    inset 0 0 0 4px rgba(255, 255, 210, 0.22),
+    8px 8px 0 rgba(0, 0, 0, 0.55);
+}
+
+.side-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 8px;
+  padding: 8px 8px 10px;
+  border-bottom: 4px solid rgba(11, 8, 5, 0.68);
+}
+
+.side-header span,
+.self-card span,
+.coupon-card span,
+.selected-card span {
+  display: block;
+  color: #315327;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.side-header strong {
+  color: #5f2415;
+  font-size: 34px;
+  line-height: 0.86;
+  text-shadow: 2px 2px 0 rgba(255, 237, 172, 0.75);
+}
+
+.ranking {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rank-card,
+.self-card,
+.coupon-card,
+.selected-card {
+  background: rgba(255, 243, 184, 0.72);
+  border: 3px solid rgba(11, 8, 5, 0.82);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.24);
+}
+
+.rank-card {
+  min-height: 66px;
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.rank-card.is-selected {
+  outline: 4px solid var(--blue);
+  outline-offset: -6px;
+}
+
+.rank-medal {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: #14100a;
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0 #000;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.rank-card strong,
+.rank-card span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-card strong {
+  color: #1a120b;
+  font-size: 13px;
+}
+
+.rank-card span {
+  color: #4b2a18;
+  font-size: 11px;
+}
+
+.rank-card small {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  color: #071207;
+  background: rgba(99, 233, 144, 0.72);
+  border: 2px solid var(--ink);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.self-card,
+.coupon-card,
+.selected-card {
+  padding: 10px;
+}
+
+.self-card strong,
+.coupon-card strong,
+.selected-card strong {
+  display: block;
+  color: #1a120b;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.selected-card {
+  align-self: end;
+  display: grid;
+  gap: 5px;
+}
+
+.coupon-card button {
+  width: 100%;
+  height: 34px;
+  margin-top: 8px;
+  color: #14100a;
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0 #000;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.coupon-card button:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  z-index: 5;
+  min-width: 280px;
+  max-width: 620px;
+  padding: 12px 16px;
+  color: #171109;
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(16px);
+  font-size: 18px;
+  font-weight: 900;
+  transition: opacity 120ms steps(2, end), transform 120ms steps(2, end);
+}
+
+.toast.is-showing {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 940px) {
+  .game-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) 220px;
+  }
+
+  .side-panel {
+    grid-template-rows: auto auto;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+  }
+
+  .ranking {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .selected-card {
+    display: none;
+  }
+}

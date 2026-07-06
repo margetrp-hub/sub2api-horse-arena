@@ -1,0 +1,39 @@
+# Local credentials and assistant state
+.credentials*
+.claude/
+.claude.json*
+.last-cleanup
+history.jsonl
+settings.json
+
+# Runtime/session/cache output
+cache/
+sessions/
+session-env/
+shell-snapshots/
+file-history/
+backups/
+plugins/
+projects/
+tmp/
+canvas/
+
+# Large design-generation scratch space
+art/
+
+# Dependency/build folders
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+*.pyo
+
+# Generation logs
+assets/**/logs/
+
+# OS/editor noise
+Thumbs.db
+.DS_Store
+*.bak
+*.log
