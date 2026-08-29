@@ -1,0 +1,336 @@
+{
+  "background": "/assets/station-master-v3/netbar-background-empty.png",
+  "workstation": {
+    "image": "/assets/station-master-v3/workstation-frame.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "bounds": [
+      145,
+      113,
+      1206,
+      1109
+    ],
+    "screenQuad": [
+      [
+        503,
+        229
+      ],
+      [
+        797,
+        299
+      ],
+      [
+        801,
+        558
+      ],
+      [
+        500,
+        481
+      ]
+    ]
+  },
+  "horse": {
+    "image": "/assets/station-master-v3/horse-working-strip.png",
+    "frameSize": [
+      576,
+      576
+    ],
+    "frames": 8,
+    "fps": 8,
+    "preview": "/assets/station-master-v3/horse-working-preview.gif",
+    "bounds": [
+      [
+        184,
+        83,
+        441,
+        560
+      ],
+      [
+        185,
+        83,
+        443,
+        560
+      ],
+      [
+        186,
+        83,
+        444,
+        560
+      ],
+      [
+        184,
+        83,
+        441,
+        560
+      ],
+      [
+        178,
+        86,
+        439,
+        560
+      ],
+      [
+        178,
+        86,
+        438,
+        560
+      ],
+      [
+        176,
+        86,
+        438,
+        560
+      ],
+      [
+        175,
+        86,
+        441,
+        560
+      ]
+    ]
+  },
+  "horses": {
+    "working": {
+      "image": "/assets/station-master-v3/horse-working-strip.png",
+      "frameSize": [
+        576,
+        576
+      ],
+      "frames": 8,
+      "fps": 8,
+      "preview": "/assets/station-master-v3/horse-working-preview.gif",
+      "bounds": [
+        [
+          184,
+          83,
+          441,
+          560
+        ],
+        [
+          185,
+          83,
+          443,
+          560
+        ],
+        [
+          186,
+          83,
+          444,
+          560
+        ],
+        [
+          184,
+          83,
+          441,
+          560
+        ],
+        [
+          178,
+          86,
+          439,
+          560
+        ],
+        [
+          178,
+          86,
+          438,
+          560
+        ],
+        [
+          176,
+          86,
+          438,
+          560
+        ],
+        [
+          175,
+          86,
+          441,
+          560
+        ]
+      ]
+    },
+    "gaming": {
+      "image": "/assets/station-master-v3/horse-gaming-strip.png",
+      "frameSize": [
+        576,
+        576
+      ],
+      "frames": 8,
+      "fps": 8,
+      "preview": "/assets/station-master-v3/horse-gaming-preview.gif",
+      "bounds": [
+        [
+          178,
+          106,
+          440,
+          560
+        ],
+        [
+          134,
+          104,
+          433,
+          560
+        ],
+        [
+          145,
+          101,
+          434,
+          559
+        ],
+        [
+          152,
+          101,
+          433,
+          560
+        ],
+        [
+          123,
+          109,
+          434,
+          559
+        ],
+        [
+          140,
+          109,
+          433,
+          559
+        ],
+        [
+          145,
+          115,
+          433,
+          560
+        ],
+        [
+          133,
+          110,
+          433,
+          560
+        ]
+      ]
+    },
+    "sleep": {
+      "image": "/assets/station-master-v3/horse-sleeping-strip.png",
+      "frameSize": [
+        576,
+        576
+      ],
+      "frames": 8,
+      "fps": 8,
+      "preview": "/assets/station-master-v3/horse-sleeping-preview.gif",
+      "bounds": [
+        [
+          165,
+          70,
+          450,
+          560
+        ],
+        [
+          169,
+          71,
+          446,
+          560
+        ],
+        [
+          171,
+          70,
+          450,
+          560
+        ],
+        [
+          162,
+          71,
+          450,
+          560
+        ],
+        [
+          159,
+          72,
+          446,
+          559
+        ],
+        [
+          161,
+          72,
+          444,
+          559
+        ],
+        [
+          162,
+          72,
+          445,
+          560
+        ],
+        [
+          163,
+          72,
+          445,
+          560
+        ]
+      ]
+    }
+  },
+  "boss": {
+    "image": "/assets/station-master-v3/cow-boss-strip.png",
+    "frameSize": [
+      448,
+      448
+    ],
+    "frames": 8,
+    "fps": 8,
+    "preview": "/assets/station-master-v3/cow-boss-preview.gif",
+    "bounds": [
+      [
+        82,
+        114,
+        365,
+        424
+      ],
+      [
+        83,
+        114,
+        365,
+        424
+      ],
+      [
+        71,
+        114,
+        373,
+        424
+      ],
+      [
+        84,
+        115,
+        364,
+        424
+      ],
+      [
+        81,
+        74,
+        364,
+        383
+      ],
+      [
+        162,
+        71,
+        448,
+        424
+      ],
+      [
+        79,
+        74,
+        362,
+        383
+      ],
+      [
+        68,
+        61,
+        369,
+        383
+      ]
+    ]
+  }
+}

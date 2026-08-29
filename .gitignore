@@ -18,6 +18,12 @@ projects/
 tmp/
 canvas/
 
+# Local QA and preview output
+.playwright-cli/
+_wtest
+output/
+tmp_preview/
+
 # Large design-generation scratch space
 art/
 
@@ -28,6 +34,13 @@ build/
 __pycache__/
 *.pyc
 *.pyo
+
+# Local deployment configuration
+.env
+.env.*
+!.env.example
+deploy/game-api.env
+public/runtime-config.local.js
 
 # Generation logs
 assets/**/logs/

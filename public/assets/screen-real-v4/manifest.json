@@ -1,0 +1,12 @@
+{
+  "dashboard": "/assets/screen-real-v4/dashboard.webp",
+  "api": "/assets/screen-real-v4/api.webp",
+  "moba": "/assets/screen-real-v4/moba.webp",
+  "shooter": "/assets/screen-real-v4/shooter.webp",
+  "video": "/assets/screen-real-v4/video.webp",
+  "download": "/assets/screen-real-v4/download.webp",
+  "rank": "/assets/screen-real-v4/rank.webp",
+  "card": "/assets/screen-real-v4/card.webp",
+  "afk": "/assets/screen-real-v4/afk.webp",
+  "fishing": "/assets/screen-real-v4/fishing.webp"
+}

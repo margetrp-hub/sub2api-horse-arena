@@ -1,0 +1,23 @@
+import { defineConfig } from "vite";
+import { resolve } from "node:path";
+
+export default defineConfig(({ command }) => ({
+  base: process.env.GAME_BASE_PATH || (command === "build" ? "/game/" : "/"),
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        game: resolve(__dirname, "game.html"),
+        station: resolve(__dirname, "station.html"),
+      },
+    },
+  },
+  server: {
+    host: "127.0.0.1",
+    port: 5173,
+  },
+  preview: {
+    host: "127.0.0.1",
+    port: 4173,
+  },
+}));

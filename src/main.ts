@@ -1,0 +1,123 @@
+import "./styles.css";
+import { fetchRankingSnapshot, type RankingSnapshot } from "./api/ranking";
+import { emptyPlayers } from "./data/players";
+import { GameApp } from "./game/GameApp";
+import { renderRankingPanel } from "./ui/RankingPanel";
+import { Toast } from "./ui/toast";
+import type { Player } from "./types";
+
+const appRoot = document.querySelector<HTMLDivElement>("#app");
+
+if (!appRoot) {
+  throw new Error("Missing #app root");
+}
+
+appRoot.innerHTML = `
+  <main class="game-shell" data-ranking-period="week" aria-label="OH！薅乐马 Pixi 小游戏">
+    <section class="playfield" aria-label="网吧游戏画面">
+      <div id="gameRoot" class="game-root"></div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </section>
+    <aside id="sidePanel" class="side-panel" aria-label="近 7 日 token 排行"></aside>
+  </main>
+`;
+
+const gameRoot = document.querySelector<HTMLElement>("#gameRoot");
+const sidePanel = document.querySelector<HTMLElement>("#sidePanel");
+const toastElement = document.querySelector<HTMLElement>("#toast");
+
+if (!gameRoot || !sidePanel || !toastElement) {
+  throw new Error("Missing game layout nodes");
+}
+
+const gameMount = gameRoot;
+const panelRoot = sidePanel;
+const toastRoot = toastElement;
+
+const toast = new Toast(toastRoot);
+const idlePlayers = emptyPlayers();
+let selected = idlePlayers[0];
+let currentPlayers: Player[] = [];
+let rankingState: "loading" | "loaded" | "stale" | "unavailable" = "loading";
+let rankingSnapshot: RankingSnapshot | undefined;
+
+const game = new GameApp(gameMount, {
+  players: idlePlayers,
+  onPlayerSelect: (player) => selectPlayer(player, false),
+  onBossHit: (hits) => toast.show(
+    hits >= 3
+      ? `牛老板连击 x${hits} · 墨镜都歪了`
+      : `你揍了牛老板 ${hits} 下 · 他记住你了`,
+  ),
+});
+
+function selectPlayer(player: Player, syncGame = true): void {
+  selected = player;
+  if (syncGame) game.selectRank(player.rank);
+  renderPanel();
+}
+
+function renderPanel(): void {
+  renderRankingPanel(panelRoot, {
+    players: currentPlayers,
+    selected,
+    onSelect: (player) => selectPlayer(player),
+    currentUser: rankingSnapshot?.currentUser,
+    source: rankingState,
+    totalTokens: rankingSnapshot?.totalTokens,
+    activeUsers: rankingSnapshot?.activeUsers,
+    lastSync: rankingSnapshot?.generatedAt,
+    rankingSource: rankingSnapshot?.source,
+  });
+}
+
+function playerKey(player: Player): string {
+  return player.userId !== undefined
+    ? `id:${String(player.userId)}`
+    : `name:${player.name}`;
+}
+
+renderPanel();
+
+async function loadRankingSnapshot(): Promise<void> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 12000);
+  try {
+    rankingSnapshot = await fetchRankingSnapshot(controller.signal);
+    currentPlayers = rankingSnapshot.players;
+    rankingState = "loaded";
+    if (currentPlayers.length > 0) {
+      const selectedKey = playerKey(selected);
+      selected = currentPlayers.find((player) => playerKey(player) === selectedKey)
+        ?? currentPlayers.find((player) => player.self)
+        ?? currentPlayers[0];
+    }
+    game.setPlayers(currentPlayers.length > 0 ? currentPlayers : emptyPlayers());
+    renderPanel();
+  } catch {
+    rankingState = rankingSnapshot ? "stale" : "unavailable";
+    if (!rankingSnapshot) {
+      currentPlayers = [];
+      game.setPlayers(idlePlayers);
+    }
+    renderPanel();
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+void loadRankingSnapshot();
+const configuredPollMs = Number(window.OH_HAOLEMA_RUNTIME?.pollMs);
+const pollMs = Number.isFinite(configuredPollMs) && configuredPollMs >= 15_000
+  ? configuredPollMs
+  : 30_000;
+window.setInterval(() => void loadRankingSnapshot(), pollMs);
+
+game.start()
+  .then(() => {
+    gameRoot.dataset.ready = "true";
+  })
+  .catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : "Pixi scene failed to start";
+    toast.show(message);
+  });

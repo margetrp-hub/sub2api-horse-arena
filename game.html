@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OH!薅乐马 · Token 消耗榜</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --gold: #ffe086;
+    --green: #63e990;
+    --cyan: #7fe3ff;
+    --panel: rgba(12, 16, 26, 0.92);
+    --line: #2a3a52;
+    --ink: #eaf2ff;
+  }
+  html, body {
+    height: 100%;
+    background: #060912;
+    color: var(--ink);
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    overflow: hidden;
+  }
+  #stage {
+    position: relative; width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center; padding: 10px;
+  }
+  #shell {
+    width: 100%; height: 100%; display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 22vw, 360px);
+    gap: 10px; align-items: center;
+  }
+  #frame {
+    position: relative;
+    width: 100%; max-width: calc((100vh - 20px) * 4 / 3);
+    max-height: calc(100vh - 20px); aspect-ratio: 4 / 3;
+    justify-self: end;
+    box-shadow: 0 0 0 2px #000, 0 20px 60px rgba(0,0,0,0.7);
+    overflow: hidden;
+  }
+  #sidePanel {
+    width: 100%; height: min(calc(100vh - 20px), 960px);
+    min-width: 0; display: flex; flex-direction: column; gap: 10px;
+    padding: 10px; background: #090d16; border: 2px solid #2a3a52;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+  }
+  canvas#scene {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    image-rendering: pixelated; display: block; cursor: pointer;
+  }
+  .hud { position: absolute; pointer-events: none; }
+  .hud * { pointer-events: auto; }
+
+  /* 顶部状态条 */
+  #topbar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .stat {
+    background: var(--panel); border: 2px solid var(--line);
+    border-radius: 6px; padding: 7px 5px; text-align: center; min-width: 0;
+  }
+  .stat .k { font-size: 11px; color: #8fa6c4; letter-spacing: 1px; }
+  .stat .v { font-size: 20px; font-weight: 700; color: var(--gold); margin-top: 2px;
+             font-variant-numeric: tabular-nums; }
+  .stat .v.small { font-size: 15px; color: var(--cyan); }
+
+  /* 实时榜单 */
+  #rankPanel {
+    width: 100%; min-height: 0; flex: 1; overflow: hidden;
+    background: var(--panel); border: 2px solid var(--line);
+    border-radius: 6px; padding: 10px 10px 12px;
+  }
+  #rankPanel h3 {
+    font-size: 14px; color: var(--gold); letter-spacing: 2px;
+    margin-bottom: 8px; border-bottom: 1px dashed var(--line); padding-bottom: 6px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #rankPanel h3 .live { font-size: 10px; color: var(--green); display: flex; align-items: center; gap: 5px; letter-spacing: 1px; }
+  #rankPanel h3 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 1.2s infinite; }
+  #rankPanel h3 .live.demo { color: var(--gold); }
+  #rankPanel h3 .live.demo .dot { background: var(--gold); animation: none; }
+  #rankPanel h3 .live.stale { color: #ff9e6d; }
+  #rankPanel h3 .live.stale .dot { background: #ff9e6d; animation-duration: 2.4s; }
+  @keyframes blink { 50% { opacity: 0.25; } }
+  #rankList { position: relative; min-height: 0; overflow-y: auto; scrollbar-color: #425674 #0a1018; }
+  .rrow {
+    display: flex; align-items: center; gap: 8px; font-size: 12px;
+    padding: 6px 6px; border-radius: 6px; cursor: pointer;
+    background: rgba(255,255,255,0.02); margin-bottom: 4px;
+    transition: background 0.2s, box-shadow 0.2s; will-change: transform;
+  }
+  .rrow.hot { background: rgba(127,227,255,0.16); box-shadow: inset 0 0 0 1px rgba(127,227,255,0.5); }
+  .rrow .rk { width: 22px; text-align: center; font-weight: 800; color: #8fa6c4; }
+  .rrow.top .rk { color: var(--gold); }
+  .rrow .av { width: 20px; height: 20px; border-radius: 4px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4); }
+  .rrow .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rrow .tk { color: var(--gold); font-variant-numeric: tabular-nums; font-weight: 700; }
+  .rrow .fire { font-size: 11px; opacity: 0; transition: opacity 0.2s; }
+  .rrow.burst .fire { opacity: 1; }
+
+  /* 悬停提示 */
+  #tip {
+    position: absolute; z-index: 30; pointer-events: none; display: none;
+    background: rgba(8,12,20,0.97); border: 1px solid var(--cyan);
+    border-radius: 8px; padding: 8px 10px; font-size: 11px; min-width: 156px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  }
+  #tip .t { color: var(--gold); font-weight: 700; font-size: 12px; margin-bottom: 5px; }
+  #tip .l { display: flex; justify-content: space-between; gap: 14px; color: #b9c8de; line-height: 1.6; }
+  #tip .l b { color: var(--cyan); font-variant-numeric: tabular-nums; font-weight: 700; }
+
+  /* 单人明细弹窗 */
+  #modal {
+    position: absolute; inset: 0; z-index: 40; background: rgba(0,0,0,0.7);
+    display: none; align-items: center; justify-content: center;
+  }
+  #modal.show { display: flex; }
+  .card {
+    width: 66%; max-width: 540px;
+    background: linear-gradient(#101828, #0a1018);
+    border: 2px solid var(--cyan); border-radius: 16px; padding: 22px 24px;
+    box-shadow: 0 0 40px rgba(127,227,255,0.3);
+  }
+  .card .hd { display: flex; align-items: center; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 12px; margin-bottom: 14px; }
+  .card .hd .sw { width: 40px; height: 40px; border-radius: 8px; flex: none; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.4); }
+  .card .hd .nm { font-size: 18px; font-weight: 800; color: var(--gold); }
+  .card .hd .sub { font-size: 11px; color: #8fa6c4; margin-top: 3px; }
+  .card .hd .rkbig { margin-left: auto; font-size: 30px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .kv { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .kv .k { font-size: 10px; color: #8fa6c4; letter-spacing: 1px; }
+  .kv .v { font-size: 16px; font-weight: 700; color: var(--cyan); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .spark { margin-top: 14px; }
+  .spark .lab { font-size: 10px; color: #8fa6c4; letter-spacing: 1px; margin-bottom: 6px; }
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 58px; }
+  .bars .b { flex: 1; background: linear-gradient(var(--cyan), #2d6d8a); border-radius: 3px 3px 0 0; min-height: 4px; }
+  .bars .b.last { background: linear-gradient(var(--gold), #b8862e); }
+  .close { margin-top: 16px; width: 100%; background: linear-gradient(var(--cyan), #2d8ab0); color: #04121a; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .close:hover { filter: brightness(1.08); }
+
+  /* 加载 */
+  #loading {
+    position: absolute; inset: 0; z-index: 60; background: #060912;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px; color: var(--gold);
+  }
+  #loading .lg { font-size: 26px; font-weight: 800; letter-spacing: 3px; }
+  #loading .bar { width: 220px; height: 10px; background: #101828; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  #loading .fill { height: 100%; width: 0; background: var(--gold); transition: width 0.2s; }
+  #loading .tip2 { font-size: 12px; color: #8fa6c4; }
+
+  @media (max-width: 900px) {
+    #shell {
+      height: auto; grid-template-columns: 1fr; grid-template-rows: auto 220px;
+      align-content: center; gap: 8px;
+    }
+    #frame {
+      width: min(100%, calc((100vh - 248px) * 4 / 3));
+      max-height: calc(100vh - 248px); justify-self: center;
+    }
+    #sidePanel {
+      width: 100%; height: 220px; display: grid;
+      grid-template-columns: 110px minmax(0, 1fr); gap: 6px; padding: 6px;
+    }
+    #topbar { grid-template-columns: 1fr; gap: 4px; }
+    .stat { padding: 4px 3px; }
+    .stat .k { font-size: 8px; }
+    .stat .v, .stat .v.small { font-size: 12px; }
+    #rankPanel { height: 100%; padding: 6px; }
+    #rankPanel h3 { margin-bottom: 4px; padding-bottom: 4px; font-size: 11px; }
+    .rrow { gap: 5px; padding: 3px; margin-bottom: 2px; font-size: 9px; }
+    .rrow .av { width: 14px; height: 14px; }
+    .rrow .rk { width: 18px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="shell">
+    <div id="frame">
+      <canvas id="scene" width="1536" height="1152"></canvas>
+
+      <div id="tip" class="hud"></div>
+
+      <div id="modal" class="hud"><div class="card" id="card"></div></div>
+
+      <div id="loading">
+        <div class="lg">OH!薅乐马</div>
+        <div class="bar"><div class="fill" id="loadFill"></div></div>
+        <div class="tip2">正在开机… 网吧马儿就位中</div>
+      </div>
+    </div>
+
+    <aside id="sidePanel">
+      <div id="topbar">
+      <div class="stat"><div class="k">今日总消耗</div><div class="v" id="stTotal">0</div></div>
+      <div class="stat"><div class="k">在刷机器</div><div class="v small" id="stActive">0 / 10</div></div>
+      <div class="stat"><div class="k">刷新时间</div><div class="v small" id="stClock">--:--:--</div></div>
+      </div>
+
+      <div id="rankPanel">
+        <h3><span>Token 消耗榜</span><span class="live"><span class="dot"></span><span id="liveLabel">LIVE</span></span></h3>
+        <div id="rankList"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="runtime-config.js"></script>
+<script>
+"use strict";
+
+// ---------------------------------------------------------------------------
+// OH!薅乐马 — sub2api「用户 Token 消耗排行榜」网吧看板
+// 一间网吧，10 台机器 = Token 消耗榜前 10 的用户，各自的马在刷 token，
+// 屏幕实时跑不同任务动画。右侧榜单实时换位；悬停看摘要、点击看单人明细。
+// 数据当前为占位假数据（live 模拟），接真实接口时替换 USERS / 更新逻辑即可。
+// ---------------------------------------------------------------------------
+
+const ASSET_BASE = "assets/station-master-v3/";
+const SCREEN_ASSET_BASE = "assets/screen-real-v4/";
+const SCREEN_ASSET_VERSION = "?v=real-v4-20260715d";
+const RUNTIME_CONFIG = window.OH_HAOLEMA_RUNTIME || {};
+const QUERY_API_BASE = new URLSearchParams(window.location.search).get("api");
+const GAME_API_BASE = String(QUERY_API_BASE || RUNTIME_CONFIG.apiBase || "").replace(/\/$/, "");
+const GAME_API_POLL_MS = Math.max(10000, Number(RUNTIME_CONFIG.pollMs) || 30000);
+const CANVAS_W = 1536, CANVAS_H = 1152;
+
+const FRAME_ORDER = [0, 4, 1, 5, 2, 6, 3, 7, 3, 6, 2, 5, 1, 4];
+
+// --- 布局（取自已发布工程 NetbarScene / LayeredWorkstation 的权威参数）--------
+const WORLD_W = 1280, WORLD_H = 960;
+const K = CANVAS_W / WORLD_W;                       // 1.2
+const SLOTS = [
+  [5, 370, 0.20], [255, 370, 0.20], [505, 370, 0.20], [755, 370, 0.20], [1005, 370, 0.20],
+  [0, 625, 0.23], [248, 625, 0.23], [496, 625, 0.23], [744, 625, 0.23], [992, 625, 0.23],
+];
+const HORSE_LX = -220, HORSE_LY = 80, HORSE_SCALE = 1.75;
+const SCREEN_QUAD = [[503, 229], [797, 299], [801, 558], [500, 481]];
+const BOSS_LX = 686, BOSS_LY = 62, BOSS_SCALE = 0.58;
+const SCREENS = ["dashboard","api","moba","shooter","video","download","rank","card","afk","fishing"];
+
+// --- 素材清单 ---------------------------------------------------------------
+const IMAGES = {
+  bg:    ASSET_BASE + "netbar-background-empty.png",
+  ws:    ASSET_BASE + "workstation-frame.png",
+  work:  ASSET_BASE + "horse-working-strip.png",
+  game:  ASSET_BASE + "horse-gaming-strip.png",
+  sleep: ASSET_BASE + "horse-sleeping-strip.png",
+  boss:  ASSET_BASE + "cow-boss-strip.png",
+  screen_dashboard: SCREEN_ASSET_BASE + "dashboard.webp" + SCREEN_ASSET_VERSION,
+  screen_api: SCREEN_ASSET_BASE + "api.webp" + SCREEN_ASSET_VERSION,
+  screen_moba: SCREEN_ASSET_BASE + "moba.webp" + SCREEN_ASSET_VERSION,
+  screen_shooter: SCREEN_ASSET_BASE + "shooter.webp" + SCREEN_ASSET_VERSION,
+  screen_video: SCREEN_ASSET_BASE + "video.webp" + SCREEN_ASSET_VERSION,
+  screen_download: SCREEN_ASSET_BASE + "download.webp" + SCREEN_ASSET_VERSION,
+  screen_rank: SCREEN_ASSET_BASE + "rank.webp" + SCREEN_ASSET_VERSION,
+  screen_card: SCREEN_ASSET_BASE + "card.webp" + SCREEN_ASSET_VERSION,
+  screen_afk: SCREEN_ASSET_BASE + "afk.webp" + SCREEN_ASSET_VERSION,
+  screen_fishing: SCREEN_ASSET_BASE + "fishing.webp" + SCREEN_ASSET_VERSION,
+};
+const FRAME_W = { work: 576, game: 576, sleep: 576, boss: 448 };
+const FRAME_H = { work: 576, game: 576, sleep: 576, boss: 448 };
+const FRAMES  = { work: 8,   game: 8,   sleep: 8,   boss: 8   };
+const HORSE_FPS = { work: 5, game: 7, sleep: 1.4 };
+const BOSS_FPS = 3.2;
+
+// --- 用户数据（占位假数据）--------------------------------------------------
+// tokens 单位：万。rate：基础消耗速率（万/秒）。接真实接口时替换此数组即可。
+const USERS = [
+  { name: "155***@qq.com",       model: "Claude-3.5-Sonnet", reqs: 48210, days: 213, tokens: 1782.4, rate: 5.2,  mode: "work",  color: "#7fe3ff" },
+  { name: "ada***@gmail.com",    model: "GPT-4o",            reqs: 39880, days: 168, tokens: 1655.1, rate: 9.4,  mode: "game",  color: "#63e990" },
+  { name: "wolf***@outlook.com", model: "DeepSeek-V3",       reqs: 51340, days: 145, tokens: 1521.7, rate: 7.1,  mode: "game",  color: "#ffe086" },
+  { name: "cs2***@foxmail.com",  model: "Gemini-1.5-Pro",    reqs: 33120, days: 121, tokens: 1493.9, rate: 11.3, mode: "game",  color: "#ff9e6d" },
+  { name: "video***@qq.com",     model: "Claude-3-Opus",     reqs: 27760, days: 98,  tokens: 1361.2, rate: 6.0,  mode: "work",  color: "#c58bff" },
+  { name: "flux***@qq.com",      model: "GPT-4o-mini",       reqs: 61020, days: 77,  tokens: 1330.6, rate: 12.6, mode: "work",  color: "#ff7ba8" },
+  { name: "rank***@qq.com",      model: "Qwen-Max",          reqs: 22940, days: 64,  tokens: 1208.3, rate: 8.2,  mode: "work",  color: "#8be0c0" },
+  { name: "card***@gmail.com",   model: "GLM-4-Plus",        reqs: 19980, days: 52,  tokens: 1179.5, rate: 10.1, mode: "game",  color: "#f0d060" },
+  { name: "afk***@qq.com",       model: "Llama-3.1-405B",    reqs: 8840,  days: 33,  tokens: 982.7,  rate: 4.1,  mode: "sleep", color: "#6da8ff" },
+  { name: "fish***@qq.com",      model: "Mistral-Large",     reqs: 7260,  days: 21,  tokens: 861.4,  rate: 6.4,  mode: "sleep", color: "#e07d7d" },
+];
+
+// ===========================================================================
+// 加载素材
+// ===========================================================================
+const assets = {};
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("加载失败: " + src));
+    img.src = src;
+  });
+}
+async function loadAll() {
+  const keys = Object.keys(IMAGES);
+  let done = 0;
+  const fill = document.getElementById("loadFill");
+  await Promise.all(keys.map(async (k) => {
+    assets[k] = await loadImage(IMAGES[k]);
+    done++;
+    fill.style.width = Math.round((done / keys.length) * 100) + "%";
+  }));
+}
+
+// ===========================================================================
+// 状态：live 模拟
+// ===========================================================================
+function makeWeek(seed) {
+  const a = []; let s = seed * 97 + 13;
+  for (let i = 0; i < 7; i++) { s = (s * 1103515245 + 12345) & 0x7fffffff; a.push(0.35 + (s % 1000) / 1000 * 0.65); }
+  return a;
+}
+const state = {
+  users: USERS.map((u, i) => ({ ...u, id: i, today: u.tokens * 0.12, burstUntil: 0, week: makeWeek(i) })),
+  time: 0,
+  hover: -1,
+  selected: -1,
+  dataSource: "demo",
+  summaryTotal: null,
+  summaryActive: null,
+  lastSync: null,
+};
+
+const LIVE_COLORS = USERS.map((user) => user.color);
+let rankingPollTimer = 0;
+
+function safeNumber(value, fallback) {
+  const number = Number(value);
+  const fallbackNumber = Number(fallback);
+  return Number.isFinite(number) ? number : (Number.isFinite(fallbackNumber) ? fallbackNumber : 0);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[char]);
+}
+
+function maskDisplayName(value) {
+  const name = String(value ?? "").trim().slice(0, 80);
+  if (!name) return "匿名用户";
+  if (name.includes("***")) return name;
+  const at = name.indexOf("@");
+  if (at > 0) return name.slice(0, Math.min(3, at)) + "***" + name.slice(at);
+  return name.slice(0, 3) + "***";
+}
+
+function normalizeMode(value) {
+  return value === "work" || value === "game" || value === "sleep" ? value : "work";
+}
+
+function setSourceStatus(status, detail) {
+  const label = document.getElementById("liveLabel");
+  if (!label) return;
+  const holder = label.parentElement;
+  holder.classList.toggle("demo", status === "demo");
+  holder.classList.toggle("stale", status === "stale");
+  label.textContent = status === "live" ? "LIVE" : status === "stale" ? "STALE" : "DEMO";
+  holder.title = detail || (status === "live" ? "NewAPI 实时数据" : "本地演示数据");
+}
+
+function applyLiveRanking(data) {
+  if (!data || !Array.isArray(data.users) || data.users.length === 0) {
+    throw new Error("排行榜数据为空");
+  }
+
+  const liveUsers = data.users.slice(0, 10).map((row, index) => {
+    const history = Array.isArray(row.history_tokens)
+      ? row.history_tokens.slice(-7).map((value) => Math.max(0, safeNumber(value)) / 10000)
+      : [];
+    while (history.length < 7) history.unshift(0);
+    return {
+      id: index,
+      sourceId: safeNumber(row.user_id, index),
+      name: maskDisplayName(row.name),
+      model: String(row.model || "NewAPI Usage").slice(0, 80),
+      reqs: Math.max(0, Math.round(safeNumber(row.requests))),
+      days: Math.max(1, Math.round(safeNumber(row.days, 1))),
+      tokens: Math.max(0, safeNumber(row.tokens)) / 10000,
+      today: Math.max(0, safeNumber(row.today_tokens, row.tokens)) / 10000,
+      rate: Math.max(0, safeNumber(row.rate_tokens_per_second)) / 10000,
+      mode: normalizeMode(row.mode),
+      color: LIVE_COLORS[index % LIVE_COLORS.length],
+      burstUntil: 0,
+      week: history.some((value) => value > 0) ? history : makeWeek(index),
+    };
+  });
+
+  while (liveUsers.length < 10) {
+    const index = liveUsers.length;
+    liveUsers.push({
+      id: index,
+      sourceId: 0,
+      name: "空机位 " + (index + 1),
+      model: "等待用户上线",
+      reqs: 0,
+      days: 1,
+      tokens: 0,
+      today: 0,
+      rate: 0,
+      mode: "sleep",
+      color: LIVE_COLORS[index % LIVE_COLORS.length],
+      burstUntil: 0,
+      week: [0, 0, 0, 0, 0, 0, 0],
+    });
+  }
+
+  state.users = liveUsers;
+  state.dataSource = "live";
+  state.summaryTotal = Math.max(0, safeNumber(data.total_tokens)) / 10000;
+  state.summaryActive = Math.max(0, Math.min(10, Math.round(safeNumber(data.active_top_users))));
+  state.lastSync = data.generated_at || new Date().toISOString();
+  state.hover = -1;
+  state.selected = -1;
+  setSourceStatus("live", "NewAPI 同步于 " + new Date(state.lastSync).toLocaleTimeString("zh-CN"));
+}
+
+function rankingEndpoint() {
+  if (!GAME_API_BASE && window.location.protocol === "file:") return "";
+  const base = GAME_API_BASE || window.location.origin;
+  const url = new URL("/api/ranking", base);
+  url.searchParams.set("period", "today");
+  url.searchParams.set("limit", "10");
+  return url.toString();
+}
+
+async function refreshLiveRanking(rebuild) {
+  const endpoint = rankingEndpoint();
+  if (!endpoint) {
+    setSourceStatus("demo");
+    return false;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(endpoint, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    const payload = await response.json();
+    if (!response.ok || payload.success !== true) {
+      throw new Error(payload.message || "排行榜接口不可用");
+    }
+    applyLiveRanking(payload.data);
+    if (rebuild) {
+      closeDetail();
+      buildLayout();
+      buildRankRows();
+      renderTopbar();
+    }
+    return true;
+  } catch (error) {
+    const stale = state.dataSource === "live";
+    setSourceStatus(stale ? "stale" : "demo", stale ? "NewAPI 暂时不可用，保留最近数据" : "接口未连接，使用演示数据");
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function bursting(u) { return performance.now() < u.burstUntil; }
+function effRate(u) { return u.rate * (bursting(u) ? 3.2 : 1); }
+function sortedUsers() { return [...state.users].sort((a, b) => b.tokens - a.tokens); }
+function rankOf(id) { return sortedUsers().findIndex((u) => u.id === id) + 1; }
+
+// ===========================================================================
+// 布局：把每个用户放到工位上（权威参数换算到画布坐标）
+// ===========================================================================
+const stations = [];
+function buildLayout() {
+  stations.length = 0;
+  const WS = assets.ws.width;   // 1254
+  SLOTS.forEach((slot, pi) => {
+    const [sx, sy, S] = slot;
+    const x  = sx * K, y = sy * K;
+    const dw = WS * S * K, dh = WS * S * K;
+    const fw = FRAME_W[state.users[pi].mode], fh = FRAME_H[state.users[pi].mode];
+    const hw = fw * HORSE_SCALE * S * K, hh = fh * HORSE_SCALE * S * K;
+    const hx = (sx + HORSE_LX * S) * K, hy = (sy + HORSE_LY * S) * K;
+    const quad = SCREEN_QUAD.map(([qx, qy]) => [(sx + qx * S) * K, (sy + qy * S) * K]);
+    stations.push({ x, y, dw, dh, playerIndex: pi, hx, hy, hw, hh, quad, screen: SCREENS[pi] });
+  });
+}
+const bossBox = {};
+function buildBoss() {
+  bossBox.w = (assets.boss.width / FRAMES.boss) * BOSS_SCALE * K;
+  bossBox.h = assets.boss.height * BOSS_SCALE * K;
+  bossBox.x = BOSS_LX * K;
+  bossBox.y = BOSS_LY * K;
+}
+
+// ===========================================================================
+// 渲染
+// ===========================================================================
+const canvas = document.getElementById("scene");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+
+// --- 屏幕动画层（沿用工程 LayeredScreen 的画法）------------------------------
+const SCR_W = 320, SCR_H = 240;
+const scr = document.createElement("canvas");
+scr.width = SCR_W; scr.height = SCR_H;
+const sctx = scr.getContext("2d");
+sctx.imageSmoothingEnabled = false;
+const SCREEN_LABELS = {
+  dashboard: ["OH! TOKEN OPS", "API RUNNING"],
+  api: ["API CONSOLE", "200 OK"],
+  moba: ["LOL · RANKED", "TEAM FIGHT"],
+  shooter: ["CS2 · DUST", "100 HP · 30 AMMO"],
+  video: ["VIDEO ROOM", "LIVE · 12.8K"],
+  download: ["MODEL SYNC", "DOWNLOADING"],
+  rank: ["TOKEN RANK", "TODAY"],
+  card: ["SOLITAIRE", "AFK MODE"],
+  afk: ["SCREEN SAVER", "AWAY"],
+  fishing: ["DESKTOP FISH", "IDLE"],
+};
+const SCREEN_CHROME = {
+  dashboard: ["#06171b", "#103b42", "#5be3d7"],
+  api: ["#09151b", "#182c36", "#63e990"],
+  moba: ["#102419", "#244f38", "#e7c85e"],
+  shooter: ["#17140f", "#443625", "#f1c55d"],
+  video: ["#111622", "#29334b", "#ef5d5d"],
+  download: ["#0b1d26", "#164156", "#61d7f2"],
+  rank: ["#15120c", "#3f2d15", "#f3b43f"],
+  card: ["#10311f", "#245638", "#f2e3bb"],
+  afk: ["#090a19", "#242247", "#b28af4"],
+  fishing: ["#173b52", "#2c6c83", "#f0d26f"],
+};
+function rect(x, y, w, h, color, alpha) {
+  sctx.save();
+  sctx.globalAlpha = alpha === undefined ? 1 : alpha;
+  sctx.fillStyle = color; sctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+  sctx.restore();
+}
+function line(x0, y0, x1, y1, color, lw) {
+  sctx.strokeStyle = color; sctx.lineWidth = lw || 2;
+  sctx.beginPath(); sctx.moveTo(x0, y0); sctx.lineTo(x1, y1); sctx.stroke();
+}
+function poly(pts, color) {
+  sctx.fillStyle = color; sctx.beginPath(); sctx.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 2) sctx.lineTo(pts[i], pts[i + 1]);
+  sctx.closePath(); sctx.fill();
+}
+function box(x, y, w, h, fill, stroke) {
+  rect(x, y, w, h, fill);
+  sctx.strokeStyle = stroke; sctx.lineWidth = 2; sctx.strokeRect(x, y, w, h);
+}
+function path(points, color, lw) {
+  if (points.length < 2) return;
+  sctx.strokeStyle = color; sctx.lineWidth = lw || 2; sctx.beginPath();
+  sctx.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) sctx.lineTo(points[i][0], points[i][1]);
+  sctx.stroke();
+}
+function drawGeneratedScreen(theme, idx, t) {
+  const image = assets["screen_" + theme];
+  if (!image) return false;
+  sctx.clearRect(0, 0, SCR_W, SCR_H);
+  sctx.drawImage(image, 0, 0, SCR_W, SCR_H);
+  const phase = Math.floor(t / 120) + idx * 7;
+  sctx.save();
+
+  if (theme === "dashboard") {
+    const x = 35 + (phase * 5) % 120;
+    rect(x, 82, 2, 39, "#75f5e5", 0.62);
+    rect(x - 3, 96 + (phase % 17), 7, 7, "#f3b43f", 0.9);
+    rect(266, 131 + (phase % 4) * 11, 7, 7, "#63e990", phase % 2 ? 0.95 : 0.42);
+  } else if (theme === "api") {
+    const y = 58 + (phase % 8) * 12;
+    rect(72, y, 142, 9, "#38d985", 0.12);
+    rect(154 + (phase % 7) * 8, y + 2, 3, 7, "#e8f8de", phase % 2 ? 1 : 0.25);
+    rect(233, 181, 73, 3, "#63e990", 0.45 + (phase % 3) * 0.2);
+  } else if (theme === "moba") {
+    const hx = 152 + Math.round(Math.sin(t / 360) * 28);
+    const hy = 101 + Math.round(Math.cos(t / 430) * 17);
+    sctx.strokeStyle = "#79dbff"; sctx.lineWidth = 2; sctx.beginPath(); sctx.arc(hx, hy, 9, 0, Math.PI * 2); sctx.stroke();
+    for (let i = 0; i < 5; i++) rect(126 + i * 11 + (phase % 3), 113 - i * 2, 4, 4, i < 3 ? "#57cfff" : "#ef6c5a");
+  } else if (theme === "shooter") {
+    const pulse = 7 + (phase % 3);
+    line(160 - pulse, 119, 160 - 3, 119, "#ffe066", 2);
+    line(160 + 3, 119, 160 + pulse, 119, "#ffe066", 2);
+    line(160, 119 - pulse, 160, 116, "#ffe066", 2);
+    line(160, 122, 160, 119 + pulse, "#ffe066", 2);
+    if (phase % 6 === 0) poly([178,142,199,131,190,154], "#ffd45a");
+  } else if (theme === "video") {
+    rect(204, 14, 8, 8, "#ef4d4d", phase % 2 ? 1 : 0.35);
+    for (let i = 0; i < 9; i++) {
+      const h = 3 + ((i * 5 + phase * 2) % 13);
+      rect(205 + i * 6, 199 - h, 4, h, i > 6 ? "#f3b43f" : "#63e990", 0.9);
+    }
+  } else if (theme === "download") {
+    const progress = (phase * 3) % 100;
+    rect(107, 185, 159, 8, "#071316", 0.75);
+    for (let i = 0; i < 20; i++) rect(109 + i * 7, 186, 5, 6, i * 5 < progress ? "#63e990" : "#213a3f", 0.9);
+  } else if (theme === "rank") {
+    const y = 70 + (phase % 10) * 13;
+    rect(44, y, 263, 12, phase % 2 ? "#f3b43f" : "#63e990", 0.13);
+  } else if (theme === "card") {
+    const column = phase % 7;
+    sctx.strokeStyle = "#ffe066"; sctx.lineWidth = 2;
+    sctx.strokeRect(11 + column * 43, 122 + (column % 3) * 7, 33, 63);
+  } else if (theme === "afk") {
+    for (let i = 0; i < 6; i++) {
+      const x = 28 + ((phase * 11 + i * 47) % 270);
+      const y = 47 + ((phase * 7 + i * 31) % 137);
+      rect(x, y, i % 2 ? 2 : 4, i % 2 ? 2 : 4, i % 3 ? "#7fe3ff" : "#f3b43f", 0.85);
+    }
+  } else if (theme === "fishing") {
+    const bx = 160 + Math.round(Math.sin(t / 380) * 8);
+    const by = 136 + Math.round(Math.sin(t / 210) * 3);
+    sctx.strokeStyle = "#dff7ff"; sctx.lineWidth = 1; sctx.beginPath(); sctx.arc(bx, by, 7 + phase % 5, 0, Math.PI * 2); sctx.stroke();
+    rect(bx - 2, by - 5, 5, 10, "#ef5d45", 0.95);
+  }
+
+  const scanOffset = (phase + idx) % 4;
+  for (let y = scanOffset; y < SCR_H; y += 4) rect(0, y, SCR_W, 1, "#9ffff0", 0.045);
+  rect(0, 0, 4, SCR_H, "#76f4df", 0.04);
+  rect(SCR_W - 5, 0, 5, SCR_H, "#000000", 0.18);
+  rect(0, SCR_H - 5, SCR_W, 5, "#000000", 0.14);
+  sctx.restore();
+  return true;
+}
+function drawScreenScene(theme, idx, t) {
+  if (drawGeneratedScreen(theme, idx, t)) return;
+  const [title, status0] = SCREEN_LABELS[theme];
+  const [background, header, accent] = SCREEN_CHROME[theme];
+  let status = status0;
+  const phase = Math.floor(t / 160) + idx * 3;
+  rect(0, 0, SCR_W, SCR_H, background);
+  rect(0, 0, SCR_W, 34, header);
+  rect(0, 210, SCR_W, 30, "#080d10");
+  rect(6, 216, 16, 16, accent);
+  rect(9, 219, 4, 4, "#081015"); rect(15, 225, 4, 4, "#081015");
+  const appColors = ["#4bc9e9", "#62e78d", "#f0be4b", "#e8635b"];
+  const activeApp = (Math.floor(t / 800) + idx) % 4;
+  for (let i = 0; i < 4; i++) rect(196 + i * 22, 217, 15, 14, i === activeApp ? appColors[i] : "#293b42");
+  rect(291, 218, 20, 3, accent); rect(291, 224, 13, 3, "#5f7479"); rect(291, 230, 17, 2, "#3d5157");
+
+  if (theme === "dashboard") {
+    const cs = ["#63e990", "#5bc8ff", "#f3b43f"];
+    for (let i = 0; i < 3; i++) {
+      const x = 10 + i * 101;
+      box(x, 42, 94, 40, "#0d2a31", "#26525c");
+      rect(x + 8, 50, 12, 12, cs[i]);
+      rect(x + 27, 49, 43 + ((phase + i * 11) % 28), 5, "#d9eee8");
+      rect(x + 27, 61, 29 + ((phase * 3 + i * 9) % 35), 4, cs[i]);
+      rect(x + 8, 70, 71, 3, "#173f47");
+      rect(x + 8, 70, 24 + ((phase * 5 + i * 17) % 48), 3, cs[i]);
+    }
+    box(10, 90, 197, 111, "#0a2026", "#28515b");
+    for (let y = 112; y < 194; y += 20) rect(18, y, 180, 1, "#17383f");
+    for (let x = 42; x < 200; x += 32) rect(x, 98, 1, 94, "#17383f");
+    const pts = [];
+    for (let i = 0; i < 12; i++) {
+      const x = 18 + i * 16, y = 178 - ((i * 23 + phase * 7 + (i % 3) * 11) % 68);
+      pts.push([x, y]); rect(x - 2, y - 2, 5, 5, i % 3 === 0 ? "#f3b43f" : "#63e990");
+    }
+    path(pts, "#63e990", 3);
+    box(215, 90, 95, 111, "#0d252a", "#28515b");
+    for (let r = 0; r < 5; r++) {
+      rect(224, 101 + r * 19, 9, 9, cs[r % 3]);
+      rect(239, 102 + r * 19, 57, 4, "#42636a");
+      rect(239, 109 + r * 19, 22 + ((phase * 4 + r * 13) % 53), 4, cs[r % 3]);
+    }
+  } else if (theme === "api") {
+    box(8, 42, 58, 160, "#0c2027", "#2b4650");
+    rect(15, 50, 10, 10, "#5bc8ff"); rect(31, 52, 26, 4, "#789097");
+    for (let r = 0; r < 7; r++) {
+      const indent = r % 3 === 0 ? 8 : r % 2 === 0 ? 16 : 12;
+      rect(14 + indent, 70 + r * 17, 6, 6, r === phase % 7 ? "#63e990" : "#48626a");
+      rect(24 + indent, 71 + r * 17, 21 + (r % 3) * 4, 3, "#789097");
+    }
+    box(70, 42, 242, 160, "#071217", "#2b4650"); rect(70, 42, 242, 20, "#152832");
+    rect(78, 49, 45, 5, "#8aa2a9"); rect(130, 49, 32, 5, "#4e6971");
+    const syntax = ["#5bc8ff", "#f3b43f", "#63e990", "#d58bec", "#e7e0c5"];
+    for (let r = 0; r < 9; r++) {
+      const y = 69 + r * 14;
+      if (r === phase % 9) rect(75, y - 2, 230, 12, "#102a31");
+      rect(78, y, 8, 4, "#38545c");
+      rect(92, y, 16 + (r % 4) * 5, 4, syntax[r % 5]);
+      rect(114 + (r % 4) * 5, y, 31 + ((r * 17 + phase * 3) % 71), 4, syntax[(r + 2) % 5]);
+      if (r % 3 === 0) rect(208, y, 34, 4, "#67828a");
+    }
+    if (phase % 2 === 0) rect(180, 181, 3, 11, "#e9f6d8");
+    rect(304, 65, 3, 124, "#263c43"); rect(304, 82 + (phase % 5) * 13, 3, 27, "#5f7b82");
+  } else if (theme === "moba") {
+    const move = t / 230;
+    box(8, 40, 304, 164, "#173923", "#4d6f46"); rect(15, 47, 290, 150, "#1c4528");
+    poly([122,47,181,47,132,197,73,197], "#27647c");
+    line(27,181,290,59,"#8c8757",7); line(29,60,289,181,"#8c8757",6);
+    rect(19,169,23,22,"#3a9ed8"); rect(278,50,23,22,"#d5544c");
+    for (let i = 0; i < 3; i++) {
+      rect(60 + i * 55, 148 - i * 27, 9, 14, "#62bce7");
+      rect(246 - i * 55, 79 + i * 27, 9, 14, "#e16a5e");
+    }
+    for (let i = 0; i < 12; i++) {
+      const team = i < 6;
+      const x = 48 + ((i * 37 + Math.sin(move + i) * 12 + 240) % 232);
+      const y = 65 + ((i * 23 + Math.cos(move * 0.8 + i) * 9 + 100) % 104);
+      rect(x, y, team ? 7 : 6, team ? 7 : 6, team ? "#57cfff" : "#ef6c5a");
+      rect(x, y - 4, team ? 13 : 11, 2, team ? "#69ddff" : "#ff8e7e");
+    }
+    for (let i = 0; i < 4; i++) box(115 + i * 27, 170, 22, 22, i === Math.floor(move) % 4 ? "#d9a943" : "#273523", "#d7c56f");
+  } else if (theme === "shooter") {
+    box(8,40,304,164,"#67543b","#b69a6e"); rect(15,47,290,57,"#8f774e"); rect(15,104,290,93,"#6f5b42");
+    poly([15,47,92,91,92,197,15,197],"#313941"); poly([305,47,228,91,228,197,305,197],"#313941");
+    rect(103,85,114,112,"#a78d66"); rect(135,92,50,87,"#242a2c");
+    rect(29,126,55,48,"#806740"); rect(37,134,39,32,"#9d8458");
+    line(148, 139, 172, 139, "#f3d46e", 3); line(160, 127, 160, 151, "#f3d46e", 3);
+    if (phase % 5 === 0) rect(175, 133, 18, 12, "#ffd46b");
+    poly([203,197,229,155,281,166,301,197],"#263139"); rect(216,166,42,8,"#11191e");
+    rect(21,181,50,7,"#152126"); rect(21,181,43,7,"#63e990");
+    rect(244,55,53,6,"#182126"); rect(256,66,41,5,phase % 3 === 0 ? "#ef6c5a" : "#d7c99e");
+  } else if (theme === "video") {
+    const blink = Math.floor(t / 440) % 2;
+    box(10,42,216,160,"#172633","#405467"); rect(17,49,202,125,"#24445a"); rect(17,49,202,42,"#31546b");
+    rect(69,72,98,93,"#9a6748"); rect(82,61,73,36,"#2c1c1a"); rect(92,98,54,45,"#d6a47b");
+    rect(99,111,10,blink ? 2 : 6,"#f3ead6"); rect(130,111,10,blink ? 2 : 6,"#f3ead6");
+    rect(113,127,15,4,"#8f3e42"); rect(76,145,84,20,"#65436d"); rect(23,55,28,12,"#e44e4e");
+    rect(20,181,193,5,"#314957"); rect(20,181,37 + (phase * 9) % 156,5,"#ef5d5d");
+    for (let i = 0; i < 12; i++) { const h = 3 + ((i * 7 + phase * 3) % 15); rect(26 + i * 9,197 - h,5,h,i % 2 ? "#5bc8ff" : "#63e990"); }
+    box(232,42,78,160,"#111c27","#405467");
+    for (let r = 0; r < 6; r++) {
+      rect(239,50 + r * 24,10,10,["#f3b43f","#5bc8ff","#63e990"][r % 3]);
+      rect(254,50 + r * 24,47,4,"#81909b"); rect(254,58 + r * 24,24 + ((r * 11 + phase) % 22),3,"#40515e");
+    }
+  } else if (theme === "download") {
+    const prog = (Math.floor(t / 95) + idx * 11) % 101;
+    rect(8,40,304,164,"#12354a"); box(24,51,272,140,"#d9d0ae","#233a45"); rect(24,51,272,22,"#245d78");
+    rect(33,59,78,5,"#e3eadf"); rect(45,88,45,36,"#e6b547"); rect(51,81,23,10,"#f1c95e");
+    rect(104,86,166,5,"#31464b"); rect(104,97,114,4,"#607277"); box(42,135,236,24,"#5e655e","#26373c");
+    for (let i = 0; i < 20; i++) rect(47 + i * 11,140,8,14,i * 5 <= prog ? "#4fca87" : "#7c8378");
+    rect(43,169,72,6,"#687679"); rect(121,169,50,6,"#687679"); rect(220,165,58,15,"#2d708d");
+    status = "DOWNLOADING " + prog + "%";
+  } else if (theme === "rank") {
+    const pulse = Math.floor(t / 310) % 5;
+    const cs = ["#f3b43f", "#c9d0d6", "#c27d43", "#5bc8ff", "#63e990"];
+    for (let i = 0; i < 5; i++) {
+      const y = 43 + i * 32;
+      box(12,y,296,27,i === pulse ? "#273a2c" : "#1b1a14",i === pulse ? "#63e990" : "#4c3a22");
+      rect(19,y + 5,17,17,cs[i]); rect(24,y + 9,7,9,"#24190e");
+      rect(44,y + 6,31,5,"#e5d7b0"); rect(44,y + 16,72 + (4 - i) * 20,4,cs[i]);
+      rect(225,y + 7,65 - i * 7,5,"#e6c75e"); rect(245,y + 16,45 - i * 4,4,"#8e7c55");
+    }
+  } else if (theme === "card") {
+    const active = Math.floor(t / 420) % 7;
+    rect(8,40,304,164,"#175938"); box(18,50,24,35,"#1d3f2d","#87a28c"); rect(51,50,24,35,"#284e38");
+    for (let i = 0; i < 4; i++) { box(181 + i * 31,50,24,35,i < 2 ? "#f2e7c8" : "#1d3f2d","#c5b58c"); if (i < 2) rect(188 + i * 31,59,10,10,i ? "#222933" : "#c94d45"); }
+    for (let c = 0; c < 7; c++) {
+      const x = 23 + c * 40;
+      for (let r = 0; r <= Math.min(c,3); r++) {
+        const y = 103 + r * 20 - (c === active ? 8 : 0);
+        box(x,y,27,40,"#f2e7c8","#2c332e"); rect(x + 6,y + 7,9,9,(c + r) % 2 ? "#cc5149" : "#222933");
+      }
+    }
+  } else if (theme === "afk") {
+    const tick = Math.floor(t / 36) + idx * 17;
+    rect(8,40,304,164,"#070817");
+    for (let i = 0; i < 24; i++) {
+      const x = 14 + ((i * 71 + tick) % 290), y = 46 + ((i * 43 + Math.floor(tick / 2)) % 151);
+      rect(x,y,i % 5 === 0 ? 3 : 2,i % 5 === 0 ? 3 : 2,i % 3 === 0 ? "#bda0ff" : "#6172b9");
+    }
+    const x = 28 + (tick % 216), y = 75 + Math.round(Math.sin(t / 420) * 42);
+    box(x,y,66,39,"#513e96","#bba3ff"); rect(x + 10,y + 9,11,20,"#e6cb58");
+    rect(x + 25,y + 9,31,5,"#e3ddf3"); rect(x + 25,y + 19,22,4,"#92e5ee"); rect(x + 25,y + 27,27,3,"#7c72bb");
+    status = "AWAY · AUTO LOCK";
+  } else if (theme === "fishing") {
+    const wave = Math.floor(t / 170) % 8;
+    rect(8,40,304,164,"#67b3cd"); rect(8,123,304,81,"#347fa4");
+    rect(32,61,34,8,"#d4e6d2"); rect(43,54,24,8,"#d4e6d2"); rect(255,55,22,22,"#f0cf66");
+    poly([8,123,56,84,111,123],"#3f7556"); poly([76,123,151,74,223,123],"#3f7556"); poly([176,123,247,88,312,123],"#3f7556");
+    for (let y = 137; y < 196; y += 17) rect(14 + ((wave + y) % 13),y,286,3,"#70c3d6",0.65);
+    rect(221,104,91,9,"#6c492d"); rect(235,113,7,54,"#503722"); rect(281,113,7,54,"#503722");
+    rect(255,82,14,28,"#3a2b28"); rect(250,76,22,13,"#d5a26e");
+    line(263,91,185,143 + wave,"#f0dfb0",2); rect(181,139 + wave,8,13,"#ef6554");
+    const fx = 62 + ((wave * 27 + idx * 19) % 120);
+    rect(fx,166,25,9,"#f0c45c"); poly([fx,170,fx - 10,162,fx - 10,178],"#f0c45c");
+  }
+  const off = (Math.floor(t / 120) + idx) % 4;
+  for (let y = 36 + off; y < 208; y += 4) rect(0,y,SCR_W,1,"#a7fff0",0.045);
+  rect(0,36,4,172,"#9ffff0",0.035); rect(316,36,4,172,"#000000",0.12);
+  sctx.fillStyle = "#e9f6d8"; sctx.font = "bold 13px Consolas, monospace";
+  sctx.textBaseline = "top"; sctx.fillText(title, 13, 10);
+  sctx.fillStyle = accent; sctx.font = "bold 10px Consolas, monospace";
+  sctx.fillText(status, 28, 218);
+}
+function drawTexTri(img, sx0, sy0, sx1, sy1, sx2, sy2, dx0, dy0, dx1, dy1, dx2, dy2) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(dx0, dy0); ctx.lineTo(dx1, dy1); ctx.lineTo(dx2, dy2); ctx.closePath();
+  ctx.clip();
+  const denom = sx0 * (sy1 - sy2) - sx1 * (sy0 - sy2) + sx2 * (sy0 - sy1);
+  if (denom === 0) { ctx.restore(); return; }
+  const a = (dx0 * (sy1 - sy2) - dx1 * (sy0 - sy2) + dx2 * (sy0 - sy1)) / denom;
+  const b = (dy0 * (sy1 - sy2) - dy1 * (sy0 - sy2) + dy2 * (sy0 - sy1)) / denom;
+  const c = (sx0 * (dx1 - dx2) - sx1 * (dx0 - dx2) + sx2 * (dx0 - dx1)) / denom;
+  const d = (sx0 * (dy1 - dy2) - sx1 * (dy0 - dy2) + sx2 * (dy0 - dy1)) / denom;
+  const e = (sx0 * (sy1 * dx2 - sy2 * dx1) - sx1 * (sy0 * dx2 - sy2 * dx0) + sx2 * (sy0 * dx1 - sy1 * dx0)) / denom;
+  const f = (sx0 * (sy1 * dy2 - sy2 * dy1) - sx1 * (sy0 * dy2 - sy2 * dy0) + sx2 * (sy0 * dy1 - sy1 * dy0)) / denom;
+  ctx.setTransform(a, b, c, d, e, f);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "low";
+  ctx.drawImage(img, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.restore();
+}
+function drawScreen(st) {
+  drawScreenScene(st.screen, st.playerIndex, state.time);
+  const q = st.quad;
+  drawTexTri(scr, 0, 0, SCR_W, 0, SCR_W, SCR_H, q[0][0], q[0][1], q[1][0], q[1][1], q[2][0], q[2][1]);
+  drawTexTri(scr, 0, 0, SCR_W, SCR_H, 0, SCR_H, q[0][0], q[0][1], q[2][0], q[2][1], q[3][0], q[3][1]);
+}
+function currentFrame(mode, phaseOffset) {
+  const fps = HORSE_FPS[mode];
+  const step = Math.floor((state.time / 1000) * fps + phaseOffset);
+  return FRAME_ORDER[step % FRAME_ORDER.length];
+}
+function horseMode(u) { return bursting(u) ? "game" : u.mode; }
+function drawHorse(st) {
+  const u = state.users[st.playerIndex];
+  const mode = horseMode(u);
+  const strip = assets[mode];
+  const fw = FRAME_W[mode], fh = FRAME_H[mode];
+  const frame = currentFrame(mode, st.playerIndex);
+  const speed = mode === "sleep" ? 430 : mode === "game" ? 125 : 165;
+  const amp = mode === "sleep" ? 1.5 : mode === "game" ? 3 : 2;
+  const bob = Math.sin(state.time / speed + st.playerIndex) * amp;
+  ctx.drawImage(strip, frame * fw, 0, fw, fh, st.hx, st.hy + bob, st.hw, st.hh);
+}
+let bossShakeUntil = 0;
+function bossHitTest(x, y) {
+  const pad = 18;
+  return x >= bossBox.x - pad && x <= bossBox.x + bossBox.w + pad &&
+         y >= bossBox.y - pad && y <= bossBox.y + bossBox.h + pad;
+}
+function drawBoss() {
+  const strip = assets.boss;
+  const fw = FRAME_W.boss, fh = FRAME_H.boss;
+  const step = Math.floor((state.time / 1000) * BOSS_FPS);
+  const idleOrder = [0, 1, 0, 3, 0, 2, 4, 6, 1, 0];
+  const frame = idleOrder[step % idleOrder.length];
+  let dx = bossBox.x, dy = bossBox.y;
+  if (performance.now() < bossShakeUntil) {
+    dx += (Math.random() - 0.5) * 12;
+    dy += (Math.random() - 0.5) * 12;
+  }
+  ctx.drawImage(strip, frame * fw, 0, fw, fh, dx, dy, bossBox.w, bossBox.h);
+}
+function drawHighlight() {
+  const layers = [
+    { i: state.selected, c: "#ffe086", w: 5 },
+    { i: state.hover,    c: "#7fe3ff", w: 4 },
+  ];
+  for (const h of layers) {
+    if (h.i < 0) continue;
+    const s = stations[h.i]; if (!s) continue;
+    const pulse = 0.5 + 0.5 * Math.sin(state.time / 300);
+    ctx.save();
+    ctx.globalAlpha = 0.35 + pulse * 0.3;
+    ctx.strokeStyle = h.c; ctx.lineWidth = h.w;
+    ctx.strokeRect(s.x + 6, s.y + 6, s.dw - 12, s.dh - 12);
+    ctx.restore();
+  }
+}
+// 工位名次徽章：把画面和右侧榜单绑在一起，反超换位时数字实时变
+const RANK_COL = ["#ffcf3a", "#d6dde6", "#cf8a48"]; // 金 / 银 / 铜
+function drawBadge(st) {
+  const u = state.users[st.playerIndex];
+  const rk = rankOf(u.id);
+  const top3 = rk <= 3;
+  const w = Math.max(34, st.dw * 0.14);
+  const h = Math.max(24, st.dh * 0.075);
+  const x = st.x + st.dw * 0.68;
+  const y = st.y + st.dh * 0.78;
+  ctx.save();
+  ctx.fillStyle = top3 ? RANK_COL[rk - 1] : "rgba(12,16,26,0.92)";
+  ctx.fillRect(x, y, w, h);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = bursting(u) ? "#ff6b3d" : top3 ? "#7a5a12" : "#2a3a52";
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = top3 ? "#3a2a06" : "#eaf2ff";
+  ctx.font = "bold " + Math.round(h * 0.58) + "px 'Segoe UI', sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(rk, x + w / 2, y + h / 2 + 1);
+  ctx.restore();
+}
+// ---------------------------------------------------------------------------
+// 飘字（点击老板催活时的口号）
+// ---------------------------------------------------------------------------
+const floats = [];
+function floatText(text, x, y, color, size) {
+  floats.push({ text, x, y, color: color || "#ffd34d", size: size || 30, born: performance.now() });
+}
+function drawFloats() {
+  const now = performance.now();
+  ctx.save();
+  ctx.textAlign = "center";
+  for (let i = floats.length - 1; i >= 0; i--) {
+    const f = floats[i];
+    const age = now - f.born;
+    if (age > 1200) { floats.splice(i, 1); continue; }
+    const p = age / 1200;
+    ctx.globalAlpha = 1 - p;
+    ctx.font = "bold " + f.size + "px 'Segoe UI', sans-serif";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(0,0,0,.6)";
+    ctx.strokeText(f.text, f.x, f.y - p * 70);
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.text, f.x, f.y - p * 70);
+  }
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// 氛围：漂浮的网吧尘埃 / 霓虹光尘
+// ---------------------------------------------------------------------------
+const DUST = Array.from({ length: 46 }, () => ({
+  x: Math.random() * CANVAS_W,
+  y: Math.random() * CANVAS_H,
+  r: 0.8 + Math.random() * 2.2,
+  vx: (Math.random() - 0.5) * 8,
+  vy: -6 - Math.random() * 12,
+  a: 0.08 + Math.random() * 0.22,
+  hue: Math.random() < 0.5 ? "127,227,255" : "255,224,134",
+}));
+function drawDust(dt) {
+  ctx.save();
+  for (const d of DUST) {
+    d.x += d.vx * dt; d.y += d.vy * dt;
+    if (d.y < -6) { d.y = CANVAS_H + 6; d.x = Math.random() * CANVAS_W; }
+    if (d.x < -6) d.x = CANVAS_W + 6; if (d.x > CANVAS_W + 6) d.x = -6;
+    const tw = 0.6 + 0.4 * Math.sin(state.time / 500 + d.x);
+    ctx.globalAlpha = d.a * tw;
+    ctx.fillStyle = "rgba(" + d.hue + ",1)";
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// 氛围：全场爆刷时的暖色霓虹呼吸叠层
+// ---------------------------------------------------------------------------
+function drawNeon() {
+  const anyBurst = state.users.some(bursting);
+  const target = anyBurst ? 1 : 0;
+  drawNeon.k += (target - drawNeon.k) * 0.06;
+  if (drawNeon.k < 0.01) return;
+  const pulse = 0.5 + 0.5 * Math.sin(state.time / 260);
+  const g = ctx.createRadialGradient(
+    CANVAS_W / 2, CANVAS_H * 0.62, CANVAS_H * 0.2,
+    CANVAS_W / 2, CANVAS_H * 0.62, CANVAS_W * 0.62);
+  g.addColorStop(0, "rgba(255,120,60," + (0.14 * drawNeon.k * (0.7 + pulse * 0.3)).toFixed(3) + ")");
+  g.addColorStop(1, "rgba(255,120,60,0)");
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  ctx.restore();
+}
+drawNeon.k = 0;
+
+// ---------------------------------------------------------------------------
+// 轻量音效：Web Audio 合成，无外部文件（首次交互后才可用）
+// ---------------------------------------------------------------------------
+let actx = null;
+function audio() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (actx.state === "suspended") actx.resume();
+  return actx;
+}
+function blip(freq, dur, type, vol) {
+  const a = audio(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type || "square"; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, a.currentTime);
+  g.gain.exponentialRampToValueAtTime(vol || 0.14, a.currentTime + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + (dur || 0.12));
+  o.connect(g); g.connect(a.destination);
+  o.start(); o.stop(a.currentTime + (dur || 0.12));
+}
+function chime() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => blip(f, 0.16, "triangle", 0.12), i * 70)); }
+
+function render(dt) {
+  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+  ctx.drawImage(assets.bg, 0, 0, CANVAS_W, CANVAS_H);
+  drawBoss();
+  for (const st of stations) {
+    drawScreen(st);
+    ctx.drawImage(assets.ws, st.x, st.y, st.dw, st.dh);
+    drawHorse(st);
+  }
+  for (const st of stations) drawBadge(st);
+  drawNeon();
+  drawDust(dt || 0.016);
+  drawHighlight();
+  drawFloats();
+}
+
+// ===========================================================================
+// HUD / 榜单
+// ===========================================================================
+function fmt(v) {
+  if (v >= 10000) return (v / 10000).toFixed(2) + "亿";
+  if (v >= 1) return v.toFixed(1) + "万";
+  return (v * 10000).toFixed(0);
+}
+function fmtInt(n) { return n.toLocaleString("en-US"); }
+
+function renderTopbar() {
+  const total = state.summaryTotal === null
+    ? state.users.reduce((sum, user) => sum + user.tokens, 0)
+    : state.summaryTotal;
+  const active = state.summaryActive === null
+    ? state.users.filter((user) => user.mode !== "sleep" || bursting(user)).length
+    : state.summaryActive;
+  document.getElementById("stTotal").textContent = fmt(total);
+  document.getElementById("stActive").textContent = active + " / 10";
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  document.getElementById("stClock").textContent =
+    pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+}
+
+// 榜单：DOM 行按 id 复用，用 CSS transform 平滑换位（FLIP 思路的轻量版）
+const rowEls = new Map();
+function buildRankRows() {
+  const box = document.getElementById("rankList");
+  box.innerHTML = "";
+  rowEls.clear();
+  state.users.forEach((u) => {
+    const row = document.createElement("div");
+    row.className = "rrow";
+    row.dataset.id = u.id;
+    row.innerHTML =
+      '<span class="rk"></span>' +
+      '<span class="av" style="background:' + u.color + '"></span>' +
+      '<span class="nm"></span>' +
+      '<span class="fire">🔥</span>' +
+      '<span class="tk"></span>';
+    row.addEventListener("mouseenter", () => { state.hover = u.id; positionTip(u.id); });
+    row.addEventListener("mousemove", () => positionTip(u.id));
+    row.addEventListener("mouseleave", () => { state.hover = -1; hideTip(); });
+    row.addEventListener("click", () => openDetail(u.id));
+    box.appendChild(row);
+    rowEls.set(u.id, row);
+  });
+}
+const ROW_H = 40; // 行高 + 间距（px，近似，用于换位位移）
+function renderRank() {
+  const order = sortedUsers();
+  const medals = ["🥇", "🥈", "🥉"];
+  order.forEach((u, idx) => {
+    const row = rowEls.get(u.id);
+    if (!row) return;
+    // 用 order 里的目标位置减去 DOM 里的原始位置，做 translateY 平滑滑动
+    const domIdx = Number(row.style.order || u.id);
+    row.style.order = idx;
+    row.querySelector(".rk").textContent = idx < 3 ? medals[idx] : (idx + 1);
+    row.querySelector(".nm").textContent = u.name;
+    row.querySelector(".tk").textContent = fmt(u.tokens);
+    row.classList.toggle("top", idx < 3);
+    row.classList.toggle("hot", state.hover === u.id || state.selected === u.id);
+    row.classList.toggle("burst", bursting(u));
+  });
+  // 用 flex order 实现换位（需要容器 flex-direction:column）
+  const box = document.getElementById("rankList");
+  box.style.display = "flex";
+  box.style.flexDirection = "column";
+}
+
+// ---------------------------------------------------------------------------
+// 互动 1：悬停看详情（画布悬停高亮 + 跟随提示框；榜单行悬停同样触发）
+// ---------------------------------------------------------------------------
+const tip = document.getElementById("tip");
+function showTipFor(id, clientX, clientY) {
+  const u = state.users.find((x) => x.id === id);
+  if (!u) return;
+  const rk = rankOf(id);
+  const displayName = escapeHtml(u.name);
+  const displayModel = escapeHtml(u.model);
+  tip.innerHTML =
+    '<div class="t">' + displayName + '</div>' +
+    '<div class="l"><span>排名</span><b>#' + rk + '</b></div>' +
+    '<div class="l"><span>模型</span><b>' + displayModel + '</b></div>' +
+    '<div class="l"><span>累计 Token</span><b>' + fmt(u.tokens) + '</b></div>' +
+    '<div class="l"><span>当前速率</span><b>' + effRate(u).toFixed(1) + ' 万/秒</b></div>' +
+    (bursting(u) ? '<div class="l"><span>状态</span><b style="color:#ff9e6d">🔥 爆刷中</b></div>' : '');
+  tip.style.display = "block";
+  const frame = document.getElementById("frame").getBoundingClientRect();
+  let x = clientX - frame.left + 14, y = clientY - frame.top + 14;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  if (x + tw > frame.width) x = clientX - frame.left - tw - 14;
+  if (y + th > frame.height) y = frame.height - th - 8;
+  x = Math.max(8, Math.min(x, frame.width - tw - 8));
+  y = Math.max(8, Math.min(y, frame.height - th - 8));
+  tip.style.left = x + "px";
+  tip.style.top = y + "px";
+}
+function positionTip(id) {
+  const e = window.event;
+  showTipFor(id, e ? e.clientX : 0, e ? e.clientY : 0);
+}
+function hideTip() { tip.style.display = "none"; }
+
+// ---------------------------------------------------------------------------
+// 互动 2：点击查看单人明细
+// ---------------------------------------------------------------------------
+function openDetail(id) {
+  const u = state.users.find((x) => x.id === id);
+  if (!u) return;
+  state.selected = id;
+  const rk = rankOf(id);
+  const medal = rk === 1 ? "🥇" : rk === 2 ? "🥈" : rk === 3 ? "🥉" : "#" + rk;
+  const maxW = Math.max(0.0001, ...u.week);
+  const bars = u.week.map((w, i) =>
+    '<div class="b' + (i === 6 ? " last" : "") + '" style="height:' + Math.round(w / maxW * 100) + '%"></div>'
+  ).join("");
+  const dayLabel = state.dataSource === "live" ? "近 7 日活跃 " : "注册 ";
+  const displayName = escapeHtml(u.name);
+  const displayModel = escapeHtml(u.model);
+  const card = document.getElementById("card");
+  card.innerHTML =
+    '<div class="hd">' +
+      '<span class="sw" style="background:' + u.color + '"></span>' +
+      '<div><div class="nm">' + displayName + '</div>' +
+      '<div class="sub">' + displayModel + ' · ' + dayLabel + u.days + ' 天</div></div>' +
+      '<span class="rkbig">' + medal + '</span>' +
+    '</div>' +
+    '<div class="grid">' +
+      '<div class="kv"><div class="k">累计 TOKEN</div><div class="v">' + fmt(u.tokens) + '</div></div>' +
+      '<div class="kv"><div class="k">今日消耗</div><div class="v">' + fmt(u.today) + '</div></div>' +
+      '<div class="kv"><div class="k">总请求数</div><div class="v">' + fmtInt(u.reqs) + '</div></div>' +
+      '<div class="kv"><div class="k">当前速率</div><div class="v">' + effRate(u).toFixed(1) + '<span style="font-size:11px"> 万/s</span></div></div>' +
+      '<div class="kv"><div class="k">日均消耗</div><div class="v">' + fmt(u.tokens / u.days) + '</div></div>' +
+      '<div class="kv"><div class="k">状态</div><div class="v" style="color:' + (bursting(u) ? "#ff9e6d" : "#63e990") + '">' + (bursting(u) ? "🔥 爆刷" : u.mode === "sleep" ? "💤 挂机" : "⌨️ 在刷") + '</div></div>' +
+    '</div>' +
+    '<div class="spark"><div class="lab">近 7 日消耗趋势</div><div class="bars">' + bars + '</div></div>' +
+    '<button class="close" id="closeBtn">关闭</button>';
+  document.getElementById("closeBtn").addEventListener("click", closeDetail);
+  document.getElementById("modal").classList.add("show");
+}
+function closeDetail() {
+  state.selected = -1;
+  document.getElementById("modal").classList.remove("show");
+}
+document.getElementById("modal").addEventListener("click", (e) => {
+  if (e.target.id === "modal") closeDetail();
+});
+
+// ---------------------------------------------------------------------------
+// 画布命中测试：悬停 / 点击工位
+// ---------------------------------------------------------------------------
+function stationAt(x, y) {
+  // 从前排（后画、在上层）往后排找，命中框用工位框范围
+  for (let i = stations.length - 1; i >= 0; i--) {
+    const s = stations[i];
+    if (x >= s.x && x <= s.x + s.dw && y >= s.y + s.dh * 0.15 && y <= s.y + s.dh) return i;
+  }
+  return -1;
+}
+function canvasXY(e) {
+  const r = canvas.getBoundingClientRect();
+  return [(e.clientX - r.left) * (CANVAS_W / r.width), (e.clientY - r.top) * (CANVAS_H / r.height)];
+}
+canvas.addEventListener("mousemove", (e) => {
+  const [x, y] = canvasXY(e);
+  const i = stationAt(x, y);
+  state.hover = i;
+  if (i >= 0) { canvas.style.cursor = "pointer"; showTipFor(state.users[i].id, e.clientX, e.clientY); }
+  else { canvas.style.cursor = bossHitTest(x, y) ? "pointer" : "default"; hideTip(); }
+});
+canvas.addEventListener("mouseleave", () => { state.hover = -1; hideTip(); });
+canvas.addEventListener("click", (e) => {
+  const [x, y] = canvasXY(e);
+  const i = stationAt(x, y);
+  if (i >= 0) { openDetail(state.users[i].id); blip(660, 0.09, "square", 0.1); return; }
+  if (bossHitTest(x, y)) spurAll();
+});
+
+// ---------------------------------------------------------------------------
+// 互动 4：点老板「全场催活」——所有用户同时爆刷，老板抖一下 + 口号飘字
+// ---------------------------------------------------------------------------
+const SPUR_PHRASES = ["都给我刷起来！", "催活啦！", "别摸鱼！", "把 Token 拉满！", "老板发威！"];
+let spurCount = 0;
+function spurAll() {
+  const now = performance.now();
+  bossShakeUntil = now + 260;
+  for (const u of state.users) u.burstUntil = now + 3200 + Math.random() * 2600;
+  const cx = bossBox.x + bossBox.w / 2, cy = bossBox.y + bossBox.h * 0.2;
+  floatText(SPUR_PHRASES[spurCount % SPUR_PHRASES.length], cx, cy, "#ff8a4d", 34);
+  spurCount++;
+  chime();
+}
+
+// ---------------------------------------------------------------------------
+// 互动 3：榜单实时滚动/换位（live 模拟数据流）
+// ---------------------------------------------------------------------------
+function tickData(dt) {
+  if (state.dataSource !== "live") {
+    for (const u of state.users) {
+      const gain = effRate(u) * dt;
+      u.tokens += gain;
+      u.today += gain;
+    }
+    // 演示模式下制造换位；真实模式只在轮询时更新数值。
+    if (Math.random() < dt * 0.55) {
+      const u = state.users[Math.floor(Math.random() * state.users.length)];
+      u.burstUntil = performance.now() + 2600 + Math.random() * 2600;
+    }
+  }
+}
+
+// ===========================================================================
+// 主循环
+// ===========================================================================
+let last = performance.now();
+let clockTick = -1;
+function loop(now) {
+  const dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  state.time = now;
+  tickData(dt);
+  render(dt);
+  renderRank();
+  if (Math.floor(now / 250) !== clockTick) {
+    clockTick = Math.floor(now / 250);
+    renderTopbar();
+    // 明细弹窗打开时，实时刷新其中的数字
+    if (state.selected >= 0 && document.getElementById("modal").classList.contains("show")) {
+      openDetail(state.selected);
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+// ===========================================================================
+// 启动
+// ===========================================================================
+async function start() {
+  try {
+    await loadAll();
+  } catch (err) {
+    document.querySelector("#loading .tip2").textContent = "素材加载失败：" + err.message;
+    return;
+  }
+  buildLayout();
+  buildBoss();
+  buildRankRows();
+  renderTopbar();
+  setSourceStatus("demo");
+  document.getElementById("loading").style.display = "none";
+  requestAnimationFrame(loop);
+  refreshLiveRanking(true);
+  rankingPollTimer = window.setInterval(() => refreshLiveRanking(true), GAME_API_POLL_MS);
+}
+start();
+</script>
+</body>
+</html>

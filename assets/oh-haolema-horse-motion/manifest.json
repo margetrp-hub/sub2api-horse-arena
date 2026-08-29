@@ -1,0 +1,95 @@
+{
+  "frames": 12,
+  "horses": [
+    {
+      "rank": 1,
+      "x": 54,
+      "y": 430,
+      "width": 118,
+      "height": 178,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-01-horse-current-sheet.png"
+    },
+    {
+      "rank": 2,
+      "x": 306,
+      "y": 430,
+      "width": 118,
+      "height": 178,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-02-horse-current-sheet.png"
+    },
+    {
+      "rank": 3,
+      "x": 540,
+      "y": 430,
+      "width": 120,
+      "height": 178,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-03-horse-current-sheet.png"
+    },
+    {
+      "rank": 4,
+      "x": 920,
+      "y": 430,
+      "width": 96,
+      "height": 178,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-04-horse-current-sheet.png"
+    },
+    {
+      "rank": 5,
+      "x": 970,
+      "y": 430,
+      "width": 116,
+      "height": 178,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-05-horse-current-sheet.png"
+    },
+    {
+      "rank": 6,
+      "x": 50,
+      "y": 626,
+      "width": 132,
+      "height": 270,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-06-horse-current-sheet.png"
+    },
+    {
+      "rank": 7,
+      "x": 318,
+      "y": 630,
+      "width": 128,
+      "height": 266,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-07-horse-current-sheet.png"
+    },
+    {
+      "rank": 8,
+      "x": 555,
+      "y": 630,
+      "width": 122,
+      "height": 264,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-08-horse-current-sheet.png"
+    },
+    {
+      "rank": 9,
+      "x": 778,
+      "y": 626,
+      "width": 136,
+      "height": 264,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-09-horse-current-sheet.png"
+    },
+    {
+      "rank": 10,
+      "x": 1000,
+      "y": 628,
+      "width": 128,
+      "height": 266,
+      "frames": 12,
+      "sheet": "assets/oh-haolema-horse-motion/station-10-horse-current-sheet.png"
+    }
+  ]
+}

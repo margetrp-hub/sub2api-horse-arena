@@ -1,69 +1,53 @@
-# SUB2API Horse Arcade
+# OH! 薅乐马
 
-像素小游戏风格的 token 消耗排行原型。页面读取 SUB2API 用户排行，把用户映射成 10 台网吧电脑前的小马，并带有老板、任务、屏幕动画和每日前三兑换券。
+基于 Vite、TypeScript 和 PixiJS 的像素网吧小游戏。画面中的工位、屏幕、马和
+牛老板使用分层图片资产；排行榜通过独立 Node 适配器读取近 7 日 Token 消耗。
 
-## 打开方式
+## 本地运行
 
-本地服务地址：
+```bash
+npm ci
+npm run dev
+```
+
+打开 <http://127.0.0.1:5173/>。页面显示真实近 7 日榜单并每 30 秒刷新；上游不可用时显示明确的不可用状态，不使用演示排名。
+
+本地接 mock 或真实适配器时，可用运行时配置或 URL 参数：
 
 ```text
-http://127.0.0.1:8765/index.html
+http://127.0.0.1:5173/?api=http://127.0.0.1:8788
 ```
 
-也可以直接打开：
+## 真实数据架构
 
 ```text
-D:\wiki\output\sub2api-horse-arena\index.html
+NewAPI / Sub2API
+        |
+        v
+server/index.mjs  (服务端凭据、缓存、脱敏、按 Token 排序)
+        |
+        v
+GET /api/ranking?period=week
+        |
+        v
+左侧近 7 日榜单 + PixiJS 游戏
 ```
 
-## 每日前三兑换券
+适配器支持两种数据源：
 
-提前把真实券码写到 `voucher-config.js`。默认的 `TOP1-READY` / `TOP2-READY` / `TOP3-READY` 只是占位，不会被发出；填好真实兑换券后，当日 token 排名前三才可以领取。每个名次每天只能发一次，每个用户每天也只能领一次。日期按上海时间刷新。
+- `USAGE_SOURCE=newapi`：读取 YHOO NewAPI 的 `/api/data/users`。
+- `USAGE_SOURCE=sub2api`：读取 Sub2API 管理员 dashboard ranking/trend，并在
+  服务端按 `tokens` 排序，而不是沿用默认费用排序。
 
-```js
-window.SUB2API_VOUCHERS = {
-  default: [
-    { title: "冠军兑换券", code: "TOP1-READY", note: "每日第 1 名" },
-    { title: "亚军兑换券", code: "TOP2-READY", note: "每日第 2 名" },
-    { title: "季军兑换券", code: "TOP3-READY", note: "每日第 3 名" }
-  ],
-  dates: {
-    "2026-06-27": {
-      rank1: { title: "冠军兑换券", code: "REAL-CODE-001", note: "当天冠军专属" },
-      rank2: { title: "亚军兑换券", code: "REAL-CODE-002", note: "当天亚军专属" },
-      rank3: { title: "季军兑换券", code: "REAL-CODE-003", note: "当天季军专属" }
-    }
-  }
-};
+上游 Token 只允许出现在服务端环境变量中。浏览器只收到脱敏用户名和聚合后的
+公开榜单数据。
+
+## 测试与构建
+
+```bash
+npm run test:api
+npm run build
 ```
 
-支持数组，也支持 `rank1`、`top1`、`#1` 这类名次键。
-
-## 接真实 SUB2API 数据
-
-页面默认请求：
-
-```text
-/api/v1/admin/dashboard/users-ranking
-```
-
-在 `index.html` 引入 `app.js` 之前注入配置即可：
-
-```html
-<script>
-  window.SUB2API_BASE_URL = "https://your-sub2api.example.com";
-  window.SUB2API_ADMIN_TOKEN = "admin jwt";
-  window.SUB2API_MY_USER_ID = 155;
-</script>
-```
-
-请求参数：
-
-```text
-start_date=今天
-end_date=今天
-limit=10
-Authorization: Bearer <admin token>
-```
-
-token 计算优先使用 `input_tokens + output_tokens`，否则使用接口返回的 `tokens` 或 `total_tokens` 字段。
+部署拆分、环境变量、Nginx 和回滚说明见
+[`deploy/README.md`](./deploy/README.md)。

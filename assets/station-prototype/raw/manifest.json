@@ -1,0 +1,23 @@
+[
+  {
+    "name": "screen-real-card-v4",
+    "size": "1024x1024",
+    "prompt": "Create one front-facing flat computer display image for the approved OH! horse-netbar game. The actual screen content must be a centered full-width 4:3 rectangle inside this square output, with uniform near-black letterbox bands above and below. Render polished high-detail 32-bit pixel art with crisp square pixels, a believable late-1990s CRT software/game appearance, restrained dark teal shadows, warm amber highlights and dense but readable interface hierarchy. It must look like genuine software or gameplay at small size rather than an abstract diagram. Tiny interface glyphs and pseudo-text are welcome, but no real logos. Screen pixels only: no CRT bezel, monitor body, desk, keyboard, horse, chair, room, reflection, perspective tilt, watermark or 3D render.  Scene: an authentic late-1990s desktop solitaire game with green felt, deck, foundations, tableau and window chrome.",
+    "path": "assets\\station-prototype\\raw\\screen-real-card-v4.png",
+    "quality": "low"
+  },
+  {
+    "name": "screen-real-afk-v4",
+    "size": "1024x1024",
+    "prompt": "Create one front-facing flat computer display image for the approved OH! horse-netbar game. The actual screen content must be a centered full-width 4:3 rectangle inside this square output, with uniform near-black letterbox bands above and below. Render polished high-detail 32-bit pixel art with crisp square pixels, a believable late-1990s CRT software/game appearance, restrained dark teal shadows, warm amber highlights and dense but readable interface hierarchy. It must look like genuine software or gameplay at small size rather than an abstract diagram. Tiny interface glyphs and pseudo-text are welcome, but no real logos. Screen pixels only: no CRT bezel, monitor body, desk, keyboard, horse, chair, room, reflection, perspective tilt, watermark or 3D render.  Scene: a nostalgic CRT screen saver with star field, a bouncing colorful logo, desktop taskbar and tiny clock.",
+    "path": "assets\\station-prototype\\raw\\screen-real-afk-v4.png",
+    "quality": "low"
+  },
+  {
+    "name": "screen-real-fishing-v4",
+    "size": "1024x1024",
+    "prompt": "Create one front-facing flat computer display image for the approved OH! horse-netbar game. The actual screen content must be a centered full-width 4:3 rectangle inside this square output, with uniform near-black letterbox bands above and below. Render polished high-detail 32-bit pixel art with crisp square pixels, a believable late-1990s CRT software/game appearance, restrained dark teal shadows, warm amber highlights and dense but readable interface hierarchy. It must look like genuine software or gameplay at small size rather than an abstract diagram. Tiny interface glyphs and pseudo-text are welcome, but no real logos. Screen pixels only: no CRT bezel, monitor body, desk, keyboard, horse, chair, room, reflection, perspective tilt, watermark or 3D render.  Scene: a detailed cozy pixel fishing game with sky, mountains, lake, pier, fisher, line, bobber, fish and compact game HUD.",
+    "path": "assets\\station-prototype\\raw\\screen-real-fishing-v4.png",
+    "quality": "low"
+  }
+]
