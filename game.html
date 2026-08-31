@@ -25,16 +25,16 @@
     overflow: hidden;
   }
   #stage {
-    position: relative; width: 100vw; height: 100vh; overflow: auto;
+    position: relative; width: 100vw; height: 100vh; overflow: hidden;
     display: flex; align-items: center; justify-content: center; padding: 10px;
     background-color: #071416;
     background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
     background-size: 18px 18px;
   }
   #shell {
-    position: relative; width: min(100%, 1480px); height: min(calc(100vh - 24px), 960px); display: grid;
+    position: relative; width: min(calc(100% - 16px), 1480px); height: min(calc(100vh - 16px), 960px); max-height: 100%; display: grid;
     grid-template-columns: clamp(300px, 22vw, 360px) minmax(0, 1fr);
-    gap: 10px; align-items: center; padding: 10px;
+    gap: 10px; align-items: center; padding: 8px;
     overflow: visible;
   }
   @keyframes panelSweep {
@@ -103,11 +103,11 @@
   #rankPanel h3 .live.stale { color: #ff9e6d; }
   #rankPanel h3 .live.stale .dot { background: #ff9e6d; animation-duration: 2.4s; }
   @keyframes blink { 50% { opacity: 0.25; } }
-  #rankList { position: relative; min-height: 0; flex: 1; overflow-y: auto; scrollbar-color: var(--line) var(--panel); }
+  #rankList { position: relative; min-height: 0; flex: 1; display: grid; grid-template-rows: repeat(10, minmax(0, 1fr)); gap: 3px; overflow: visible; }
   .rrow {
     display: flex; align-items: center; gap: 8px; font-size: 13px;
-    padding: 6px; border-radius: 0; cursor: pointer;
-    background: #19464a; border: 1px solid var(--line); margin-bottom: 5px;
+    padding: 4px 6px; border-radius: 0; cursor: pointer;
+    background: #19464a; border: 1px solid var(--line); margin-bottom: 0;
     box-shadow: 2px 2px 0 #080617;
     transition: background 0.12s, box-shadow 0.12s, transform 0.12s; will-change: transform;
   }

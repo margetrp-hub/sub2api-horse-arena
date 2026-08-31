@@ -30,7 +30,7 @@ body,
 #app {
   display: grid;
   place-items: center;
-  overflow: auto;
+  overflow: hidden;
 }
 
 button {
@@ -189,12 +189,12 @@ button {
 
 .ranking {
   display: grid;
-  grid-auto-rows: minmax(44px, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
   min-height: 0;
-  gap: 5px;
+  gap: 3px;
   margin: 0;
   padding: 0;
-  overflow-y: auto;
+  overflow: hidden;
   list-style: none;
 }
 
@@ -227,12 +227,12 @@ button {
 }
 
 .rank-card {
-  min-height: 48px;
+  min-height: 0;
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-columns: 26px minmax(0, 1fr);
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
+  gap: 4px;
+  padding: 2px 5px;
   cursor: pointer;
 }
 
@@ -247,15 +247,15 @@ button {
 }
 
 .rank-medal {
-  width: 28px;
-  height: 28px;
+  width: 23px;
+  height: 23px;
   display: grid;
   place-items: center;
   color: var(--gold-soft);
   background: #26180e;
   border: 2px solid #a5662c;
   box-shadow: 2px 2px 0 #030302;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 900;
 }
 
@@ -269,7 +269,7 @@ button {
 
 .rank-card strong {
   color: #f4e4b8;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .rank-delta {
@@ -295,7 +295,7 @@ button {
 
 .rank-card span {
   color: #d39a4a;
-  font-size: 11px;
+  font-size: 9px;
 }
 
 .current-mark {
