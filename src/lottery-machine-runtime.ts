@@ -18,10 +18,12 @@ const WIDTH = 720;
 const HEIGHT = 720;
 const PIXEL_SCALE = 1 / 3;
 const ANIMATION_DURATION = 6200;
-const GOLD = 0xffd166;
-const GOLD_LIGHT = 0xffe9a3;
-const GLASS = 0x5de6c3;
-const BALL_COLORS = [0xff5d7d, 0x4ee4c1, 0xffc857, 0xf7f0d8, 0x9b8cff, 0x55a7ff];
+const GOLD = 0xf3c969;
+const GOLD_LIGHT = 0xffedac;
+const GLASS = 0x62e0ce;
+const CHARCOAL = 0x102a2d;
+const DEEP = 0x061519;
+const BALL_COLORS = [0xff806d, 0x62e0ce, 0xf3c969, 0xf8f0d6, 0x75b7e8, 0xffa45f];
 
 function clamp(value: number, min = 0, max = 1): number {
   return Math.max(min, Math.min(max, value));
@@ -49,18 +51,18 @@ function drawBall(node: Graphics, color: number, radius: number): void {
     -radius, radius - 5,
     -radius, -radius + 5,
   ];
-  node.beginFill(0x0c0a20, 0.8);
+  node.beginFill(DEEP, 0.88);
   node.drawPolygon(points.map((value, index) => value + (index % 2 === 0 ? 3 : 5)));
   node.endFill();
   node.beginFill(color);
   node.drawPolygon(points);
   node.endFill();
-  node.lineStyle(2, 0xfff5d7, 0.8);
+  node.lineStyle(2, 0xfff1cf, 0.82);
   node.drawPolygon(points.map((value) => value * 0.9));
-  node.beginFill(0xfff7df, 0.9);
-  node.drawRect(-radius * 0.35, -radius * 0.38, Math.max(3, radius * 0.2), Math.max(3, radius * 0.2));
+  node.beginFill(0xfff7df, 0.95);
+  node.drawRect(-radius * 0.35, -radius * 0.38, Math.max(4, radius * 0.22), Math.max(4, radius * 0.22));
   node.endFill();
-  node.beginFill(0x0c0a20, 0.24);
+  node.beginFill(DEEP, 0.24);
   node.drawRect(-radius * 0.42, radius * 0.33, radius * 0.84, Math.max(3, radius * 0.16));
   node.endFill();
 }
@@ -120,9 +122,9 @@ export class LotteryMachineRuntime {
     this.app.view.style.imageRendering = "pixelated";
     this.app.view.setAttribute("aria-hidden", "true");
     this.mount.appendChild(this.app.view);
-    this.statusText = new Text("PRESS", new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 12,
+    this.statusText = new Text("READY", new TextStyle({
+      fontFamily: "Cascadia Mono, monospace",
+      fontSize: 11,
       fontWeight: "700",
       fill: 0xfff0d2,
       letterSpacing: 2,
@@ -160,65 +162,72 @@ export class LotteryMachineRuntime {
 
   private buildScene(): void {
     const stageGlow = new Graphics();
-    stageGlow.beginFill(0x392f73, 0.9);
-    stageGlow.drawRect(125, 92, 470, 486);
+    stageGlow.beginFill(0x0b2427, 0.96);
+    stageGlow.drawRect(108, 68, 504, 628);
     stageGlow.endFill();
-    stageGlow.beginFill(0x5de6c3, 0.18);
-    stageGlow.drawRect(144, 112, 18, 18);
-    stageGlow.drawRect(558, 154, 18, 18);
-    stageGlow.drawRect(154, 522, 26, 26);
-    stageGlow.drawRect(532, 492, 26, 26);
+    stageGlow.lineStyle(3, 0x2a5e60, 0.95);
+    stageGlow.drawRect(108, 68, 504, 628);
+    stageGlow.lineStyle(2, GOLD, 0.32);
+    stageGlow.drawRect(124, 84, 472, 596);
+    stageGlow.beginFill(GLASS, 0.1);
+    stageGlow.drawRect(132, 104, 12, 12);
+    stageGlow.drawRect(576, 160, 12, 12);
+    stageGlow.drawRect(148, 610, 18, 18);
+    stageGlow.drawRect(554, 574, 18, 18);
     stageGlow.endFill();
+    for (let x = 140; x < 590; x += 30) {
+      stageGlow.beginFill(GLASS, 0.055);
+      stageGlow.drawRect(x, 116, 1, 540);
+      stageGlow.endFill();
+    }
     this.machine.addChild(stageGlow);
 
     const shadow = new Graphics();
-    shadow.beginFill(0x0c0a20, 0.9);
-    shadow.drawRect(202, 690, 318, 18);
+    shadow.beginFill(DEEP, 0.95);
+    shadow.drawRect(184, 690, 352, 18);
     shadow.endFill();
     this.machine.addChild(shadow);
 
     const body = new Graphics();
-    body.beginFill(0x171331);
-    body.drawRect(218, 390, 284, 298);
+    body.beginFill(CHARCOAL);
+    body.drawRect(216, 390, 288, 298);
     body.endFill();
     body.lineStyle(8, GOLD, 1);
-    body.drawRect(218, 390, 284, 298);
-    body.beginFill(0x282052, 1);
-    body.drawRect(236, 415, 248, 251);
+    body.drawRect(216, 390, 288, 298);
+    body.beginFill(0x173c3e, 1);
+    body.drawRect(232, 407, 256, 265);
     body.endFill();
-    body.lineStyle(3, GLASS, 0.6);
-    body.drawRect(236, 415, 248, 251);
+    body.lineStyle(3, GLASS, 0.48);
+    body.drawRect(232, 407, 256, 265);
+    body.beginFill(0x061519, 0.7);
+    body.drawRect(245, 421, 10, 236);
+    body.drawRect(465, 421, 10, 236);
+    body.endFill();
     this.machine.addChild(body);
 
-    const bodyHighlight = new Graphics();
-    bodyHighlight.beginFill(0x9b8cff, 0.28);
-    bodyHighlight.drawRect(248, 425, 12, 220);
-    bodyHighlight.endFill();
-    this.machine.addChild(bodyHighlight);
-
     const bodyDetails = new Graphics();
-    bodyDetails.lineStyle(3, 0x9b8cff, 0.55);
-    bodyDetails.moveTo(257, 438);
-    bodyDetails.lineTo(257, 452);
-    bodyDetails.moveTo(463, 438);
-    bodyDetails.lineTo(463, 452);
-    bodyDetails.beginFill(0xffd166, 0.86);
-    bodyDetails.drawRect(252, 442, 10, 6);
-    bodyDetails.drawRect(458, 442, 10, 6);
+    bodyDetails.lineStyle(3, GOLD_LIGHT, 0.46);
+    bodyDetails.moveTo(256, 429);
+    bodyDetails.lineTo(256, 454);
+    bodyDetails.moveTo(464, 429);
+    bodyDetails.lineTo(464, 454);
+    bodyDetails.beginFill(GOLD, 0.92);
+    bodyDetails.drawRect(251, 440, 10, 7);
+    bodyDetails.drawRect(459, 440, 10, 7);
     bodyDetails.endFill();
-    bodyDetails.beginFill(0x5de6c3, 0.82);
-    bodyDetails.drawRect(252, 614, 10, 10);
-    bodyDetails.drawRect(458, 614, 10, 10);
+    bodyDetails.beginFill(GLASS, 0.9);
+    bodyDetails.drawRect(251, 633, 10, 10);
+    bodyDetails.drawRect(459, 633, 10, 10);
     bodyDetails.endFill();
-    bodyDetails.beginFill(0x0c0a20, 0.8);
-    bodyDetails.drawRect(246, 475, 12, 12);
-    bodyDetails.drawRect(462, 475, 12, 12);
+    bodyDetails.beginFill(DEEP, 0.92);
+    bodyDetails.drawRect(250, 474, 12, 12);
+    bodyDetails.drawRect(458, 474, 12, 12);
     bodyDetails.endFill();
     this.machine.addChild(bodyDetails);
 
     [
-      [252, 442, 0xffd166], [458, 442, 0xffd166],
-      [252, 614, 0x5de6c3], [458, 614, 0x5de6c3],
+      [251, 440, GOLD], [459, 440, GOLD],
+      [251, 633, GLASS], [459, 633, GLASS],
     ].forEach(([x, y, color]) => {
       const light = new Graphics();
       light.beginFill(color, 1);
@@ -230,31 +239,45 @@ export class LotteryMachineRuntime {
     });
 
     const base = new Graphics();
-    base.beginFill(0x0c0a20);
-    base.drawRect(190, 650, 340, 64);
+    base.beginFill(DEEP);
+    base.drawRect(182, 650, 356, 66);
     base.endFill();
     base.lineStyle(8, GOLD, 1);
-    base.drawRect(190, 650, 340, 64);
-    base.lineStyle(3, GOLD_LIGHT, 0.75);
-    base.drawRect(204, 662, 312, 40);
+    base.drawRect(182, 650, 356, 66);
+    base.lineStyle(3, GOLD_LIGHT, 0.72);
+    base.drawRect(197, 662, 326, 42);
+    base.beginFill(0x173c3e, 1);
+    base.drawRect(215, 672, 52, 20);
+    base.drawRect(453, 672, 52, 20);
+    base.endFill();
     this.machine.addChild(base);
 
     const dome = new Graphics();
-    dome.beginFill(0x171331, 1);
-    dome.drawPolygon([360, 42, 444, 52, 506, 88, 548, 148, 548, 346, 518, 400, 202, 400, 172, 346, 172, 148, 214, 88, 276, 52]);
+    const outerDome = [360, 38, 430, 46, 492, 74, 540, 124, 560, 180, 560, 346, 522, 400, 198, 400, 160, 346, 160, 180, 180, 124, 228, 74, 290, 46];
+    const innerDome = [360, 59, 423, 66, 477, 91, 518, 137, 536, 184, 536, 338, 507, 380, 213, 380, 184, 338, 184, 184, 202, 137, 243, 91, 297, 66];
+    dome.beginFill(0x0c2427, 1);
+    dome.drawPolygon(outerDome);
     dome.endFill();
     dome.lineStyle(8, GOLD, 1);
-    dome.drawPolygon([360, 42, 444, 52, 506, 88, 548, 148, 548, 346, 518, 400, 202, 400, 172, 346, 172, 148, 214, 88, 276, 52]);
-    dome.lineStyle(3, GLASS, 0.9);
-    dome.drawPolygon([360, 60, 434, 70, 490, 102, 526, 158, 526, 338, 500, 380, 220, 380, 194, 338, 194, 158, 230, 102, 286, 70]);
+    dome.drawPolygon(outerDome);
+    dome.beginFill(0x164246, 0.78);
+    dome.drawPolygon(innerDome);
+    dome.endFill();
+    dome.lineStyle(3, GLASS, 0.95);
+    dome.drawPolygon(innerDome);
+    dome.lineStyle(2, GOLD_LIGHT, 0.42);
+    dome.moveTo(190, 180);
+    dome.lineTo(190, 336);
+    dome.moveTo(530, 180);
+    dome.lineTo(530, 336);
     this.machine.addChild(dome);
 
     const ballsLayer = new Container();
     const ballPositions = [
-      [281, 183, 22], [335, 151, 22], [388, 170, 24], [444, 192, 23],
-      [255, 235, 23], [303, 231, 22], [355, 216, 24], [412, 227, 23], [465, 245, 23],
-      [278, 287, 24], [329, 278, 22], [380, 278, 23], [430, 293, 24],
-      [308, 338, 23], [359, 331, 25], [411, 345, 22],
+      [281, 181, 22], [335, 151, 22], [388, 168, 24], [444, 190, 23],
+      [255, 234, 23], [303, 230, 22], [355, 214, 24], [412, 225, 23], [465, 244, 23],
+      [278, 286, 24], [329, 277, 22], [380, 277, 23], [430, 292, 24],
+      [308, 337, 23], [359, 330, 25], [411, 344, 22],
     ];
     ballPositions.forEach(([x, y, radius], index) => {
       const node = new Graphics();
@@ -267,123 +290,146 @@ export class LotteryMachineRuntime {
     this.machine.addChild(ballsLayer);
 
     const glassReflection = new Graphics();
-    glassReflection.beginFill(0xeaffdf, 0.16);
-    glassReflection.drawRect(236, 136, 12, 156);
+    glassReflection.beginFill(0xeaffdf, 0.13);
+    glassReflection.drawRect(222, 136, 11, 166);
+    glassReflection.drawRect(485, 214, 9, 74);
     glassReflection.endFill();
-    glassReflection.beginFill(0xffffff, 0.1);
-    glassReflection.drawRect(458, 206, 10, 72);
-    glassReflection.endFill();
-    glassReflection.lineStyle(3, 0xeaffdf, 0.62);
-    glassReflection.moveTo(242, 120);
-    glassReflection.lineTo(270, 92);
-    glassReflection.lineTo(296, 78);
+    glassReflection.lineStyle(3, 0xeaffdf, 0.7);
+    glassReflection.moveTo(228, 118);
+    glassReflection.lineTo(258, 88);
+    glassReflection.lineTo(290, 72);
     this.machine.addChild(glassReflection);
 
     const neck = new Graphics();
-    neck.beginFill(0x0c0a20);
-    neck.drawRect(211, 377, 298, 51);
+    neck.beginFill(DEEP);
+    neck.drawRect(205, 376, 310, 54);
     neck.endFill();
     neck.lineStyle(8, GOLD, 1);
-    neck.drawRect(211, 377, 298, 51);
+    neck.drawRect(205, 376, 310, 54);
+    neck.lineStyle(2, GOLD_LIGHT, 0.7);
+    neck.drawRect(220, 389, 280, 27);
     this.machine.addChild(neck);
 
     const cap = new Graphics();
-    cap.beginFill(0x0c0a20);
-    cap.drawRect(218, 71, 284, 70);
+    cap.beginFill(DEEP);
+    cap.drawRect(226, 66, 268, 76);
     cap.endFill();
     cap.lineStyle(8, GOLD, 1);
-    cap.drawRect(218, 71, 284, 70);
-    cap.lineStyle(3, GOLD_LIGHT, 0.75);
-    cap.drawRect(232, 83, 256, 45);
+    cap.drawRect(226, 66, 268, 76);
+    cap.lineStyle(3, GOLD_LIGHT, 0.78);
+    cap.drawRect(239, 79, 242, 50);
+    cap.beginFill(0x173c3e, 1);
+    cap.drawRect(250, 89, 220, 30);
+    cap.endFill();
+    cap.lineStyle(2, GLASS, 0.55);
+    cap.drawRect(250, 89, 220, 30);
     this.machine.addChild(cap);
 
     const capKnob = new Graphics();
-    capKnob.beginFill(0x282052);
-    capKnob.drawRect(348, 44, 24, 24);
+    capKnob.beginFill(0x173c3e);
+    capKnob.drawRect(347, 42, 26, 26);
     capKnob.endFill();
     capKnob.lineStyle(4, GOLD, 1);
-    capKnob.drawRect(348, 44, 24, 24);
-    capKnob.beginFill(GOLD_LIGHT, 0.5);
-    capKnob.drawRect(352, 48, 6, 6);
+    capKnob.drawRect(347, 42, 26, 26);
+    capKnob.beginFill(GOLD_LIGHT, 0.55);
+    capKnob.drawRect(352, 47, 7, 7);
     capKnob.endFill();
     this.machine.addChild(capKnob);
 
+    const capText = new Text("LUCKY  /  CAPSULE", new TextStyle({
+      fontFamily: "Cascadia Mono, monospace",
+      fontSize: 14,
+      fontWeight: "700",
+      fill: GOLD_LIGHT,
+      letterSpacing: 1.4,
+    }));
+    capText.anchor.set(0.5);
+    capText.position.set(360, 103);
+    this.machine.addChild(capText);
+
     const panel = new Graphics();
-    panel.beginFill(0x49366f);
-    panel.drawRect(268, 458, 184, 125);
+    panel.beginFill(0x1b494a);
+    panel.drawRect(306, 452, 146, 116);
     panel.endFill();
-    panel.lineStyle(6, GOLD_LIGHT, 1);
-    panel.drawRect(268, 458, 184, 125);
-    panel.lineStyle(3, 0x0c0a20, 0.9);
-    panel.drawRect(279, 469, 162, 102);
-    panel.beginFill(0x171331, 1);
-    panel.drawRect(297, 511, 126, 25);
+    panel.lineStyle(5, GOLD_LIGHT, 1);
+    panel.drawRect(306, 452, 146, 116);
+    panel.lineStyle(2, DEEP, 0.95);
+    panel.drawRect(317, 463, 124, 94);
+    panel.beginFill(DEEP, 1);
+    panel.drawRect(329, 507, 100, 27);
     panel.endFill();
-    panel.lineStyle(2, GLASS, 0.8);
-    panel.drawRect(297, 511, 126, 25);
-    panel.beginFill(0xffd166, 0.9);
-    panel.drawRect(309, 518, 8, 8);
-    panel.drawRect(329, 518, 8, 8);
-    panel.drawRect(349, 518, 8, 8);
-    panel.drawRect(369, 518, 8, 8);
+    panel.lineStyle(2, GLASS, 0.86);
+    panel.drawRect(329, 507, 100, 27);
+    panel.beginFill(GOLD, 0.9);
+    panel.drawRect(340, 514, 8, 8);
+    panel.drawRect(358, 514, 8, 8);
+    panel.drawRect(376, 514, 8, 8);
+    panel.drawRect(394, 514, 8, 8);
+    panel.endFill();
+    panel.beginFill(GLASS, 0.85);
+    panel.drawRect(330, 480, 36, 8);
+    panel.drawRect(373, 480, 56, 8);
     panel.endFill();
     this.machine.addChild(panel);
 
-    const lucky = new Text("LUCKY", new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 18,
+    const lucky = new Text("TOKEN", new TextStyle({
+      fontFamily: "Cascadia Mono, monospace",
+      fontSize: 17,
       fontWeight: "700",
       fill: GOLD_LIGHT,
       letterSpacing: 2,
     }));
     lucky.anchor.set(0.5);
-    lucky.position.set(360, 487);
+    lucky.position.set(379, 476);
     this.machine.addChild(lucky);
 
     const outlet = new Graphics();
-    outlet.beginFill(0x0c0a20);
-    outlet.drawRect(294, 589, 132, 115);
+    outlet.beginFill(DEEP);
+    outlet.drawRect(294, 585, 132, 120);
     outlet.endFill();
     outlet.lineStyle(6, GOLD, 1);
-    outlet.drawRect(294, 589, 132, 115);
-    outlet.beginFill(0x050411);
-    outlet.drawRect(306, 602, 108, 92);
+    outlet.drawRect(294, 585, 132, 120);
+    outlet.beginFill(0x020d10);
+    outlet.drawRect(307, 599, 106, 94);
     outlet.endFill();
-    outlet.beginFill(0x392f73, 0.85);
-    outlet.drawRect(316, 614, 88, 10);
-    outlet.drawRect(316, 676, 88, 8);
+    outlet.lineStyle(2, GLASS, 0.62);
+    outlet.drawRect(316, 612, 88, 56);
+    outlet.beginFill(0x1b494a, 0.9);
+    outlet.drawRect(316, 612, 88, 10);
+    outlet.drawRect(316, 680, 88, 8);
     outlet.endFill();
-    outlet.lineStyle(2, 0x5de6c3, 0.55);
-    outlet.drawRect(320, 628, 80, 43);
+    outlet.beginFill(GOLD, 0.8);
+    outlet.drawRect(329, 602, 62, 5);
+    outlet.endFill();
     this.machine.addChild(outlet);
 
     const lever = new Graphics();
-    lever.lineStyle(8, GOLD, 1);
-    lever.moveTo(272, 535);
-    lever.lineTo(301, 518);
-    lever.beginFill(0xff5d7d, 1);
-    lever.drawRect(249, 520, 18, 18);
+    lever.lineStyle(9, GOLD, 1);
+    lever.moveTo(271, 535);
+    lever.lineTo(306, 515);
+    lever.beginFill(BALL_COLORS[0], 1);
+    lever.drawRect(247, 520, 20, 20);
     lever.endFill();
-    lever.lineStyle(2, 0xffb4cb, 0.85);
-    lever.drawRect(252, 523, 12, 12);
+    lever.lineStyle(2, 0xffc0a9, 0.9);
+    lever.drawRect(251, 524, 12, 12);
     this.machine.addChild(lever);
 
     this.button.position.set(271, 535);
     const buttonBezel = new Graphics();
-    buttonBezel.beginFill(0x0c0a20);
-    buttonBezel.drawRect(-51, -45, 102, 90);
+    buttonBezel.beginFill(DEEP);
+    buttonBezel.drawRect(-48, -38, 96, 76);
     buttonBezel.endFill();
-    buttonBezel.lineStyle(6, GOLD, 1);
-    buttonBezel.drawRect(-51, -45, 102, 90);
+    buttonBezel.lineStyle(5, GOLD, 1);
+    buttonBezel.drawRect(-48, -38, 96, 76);
     this.button.addChild(buttonBezel);
     const buttonFace = new Graphics();
-    buttonFace.beginFill(0xff5d7d);
-    buttonFace.drawRect(-37, -31, 74, 62);
+    buttonFace.beginFill(0xff806d);
+    buttonFace.drawRect(-35, -26, 70, 52);
     buttonFace.endFill();
-    buttonFace.lineStyle(3, 0xffb4cb, 0.9);
-    buttonFace.drawRect(-33, -27, 66, 54);
-    buttonFace.beginFill(0xfff1d4, 0.9);
-    buttonFace.drawRect(-24, -22, 8, 8);
+    buttonFace.lineStyle(3, 0xffc0a9, 0.92);
+    buttonFace.drawRect(-31, -22, 62, 44);
+    buttonFace.beginFill(0xfff1cf, 0.9);
+    buttonFace.drawRect(-23, -17, 8, 8);
     buttonFace.endFill();
     this.button.addChild(buttonFace);
     this.statusText.anchor.set(0.5);
@@ -392,17 +438,17 @@ export class LotteryMachineRuntime {
     this.machine.addChild(this.button);
 
     const capsuleTopGraphic = new Graphics();
-    capsuleTopGraphic.beginFill(0xff5d7d);
+    capsuleTopGraphic.beginFill(BALL_COLORS[0]);
     capsuleTopGraphic.drawPolygon([-24, -42, 24, -42, 31, -35, 31, -10, -31, -10, -31, -35]);
     capsuleTopGraphic.endFill();
-    capsuleTopGraphic.lineStyle(2, 0xffb4cb, 0.9);
+    capsuleTopGraphic.lineStyle(2, 0xffc0a9, 0.9);
     capsuleTopGraphic.drawPolygon([-24, -39, 24, -39, 28, -34, 28, -13, -28, -13, -28, -34]);
     capsuleTopGraphic.beginFill(0xfff5dd, 0.9);
     capsuleTopGraphic.drawRect(-17, -33, 7, 7);
     capsuleTopGraphic.endFill();
     this.capsuleTop.addChild(capsuleTopGraphic);
     const capsuleBottomGraphic = new Graphics();
-    capsuleBottomGraphic.beginFill(0xffe7a6);
+    capsuleBottomGraphic.beginFill(0xf1d39a);
     capsuleBottomGraphic.drawPolygon([-31, 10, 31, 10, 31, 35, 24, 42, -24, 42, -31, 35]);
     capsuleBottomGraphic.endFill();
     capsuleBottomGraphic.lineStyle(2, GOLD_LIGHT, 0.9);
@@ -417,7 +463,7 @@ export class LotteryMachineRuntime {
     this.capsule.visible = false;
     this.machine.addChild(this.capsule);
 
-    this.rewardGlow.beginFill(0xffd166, 0.22);
+    this.rewardGlow.beginFill(GOLD, 0.22);
     this.rewardGlow.drawRect(-28, -28, 56, 56);
     this.rewardGlow.endFill();
     this.rewardGlow.lineStyle(3, GOLD_LIGHT, 0.8);

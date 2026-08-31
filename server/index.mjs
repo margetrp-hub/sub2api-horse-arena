@@ -413,6 +413,15 @@ export function createApp(
           jsonResponse(res, 200, { success: true, data });
           return;
         }
+        if (req.method === "POST" && url.pathname === "/api/lottery/exchange") {
+          const body = await readJsonBody(req);
+          const data = await lottery.exchangePoints({
+            userId: user.id,
+            count: body?.count,
+          });
+          jsonResponse(res, 200, { success: true, data });
+          return;
+        }
         jsonResponse(res, 404, { success: false, code: "not_found" });
       } catch (error) {
         const message = error instanceof Error ? error.message : "lottery error";

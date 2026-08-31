@@ -311,6 +311,29 @@ test("lottery service applies the server-side pity counter", async () => {
   assert.equal(result.results[0].grantStatus, "committed");
 });
 
+test("lottery service exchanges points for lottery tokens atomically", async () => {
+  const lottery = createLotteryService({
+    initialState: {
+      paidAmount: 0,
+      threshold: 50,
+      starterDraws: 0,
+      remainingDraws: 0,
+      points: 250,
+      tokenExchangeCost: 100,
+      missStreak: 0,
+    },
+  });
+  const exchanged = await lottery.exchangePoints({ userId: "user-points", count: 2 });
+
+  assert.equal(exchanged.points, 50);
+  assert.equal(exchanged.lotteryTokens, 2);
+  assert.equal(exchanged.exchangedTokens, 2);
+  await assert.rejects(
+    () => lottery.exchangePoints({ userId: "user-points", count: 1 }),
+    (error) => error.code === "insufficient_points" && error.status === 409,
+  );
+});
+
 test("lottery routes expose server state and the Pixi runtime animation contract", async () => {
   const lottery = createLotteryService({ random: () => 0.99999 });
   const config = {
@@ -334,6 +357,8 @@ test("lottery routes expose server state and the Pixi runtime animation contract
     assert.equal(stateResponse.status, 200);
     assert.equal(stateBody.data.animation.key, "pixi-runtime");
     assert.equal(stateBody.data.remainingDraws, 2);
+    assert.equal(stateBody.data.lotteryTokens, 2);
+    assert.equal(stateBody.data.points, 1280);
 
     const drawResponse = await fetch(`http://127.0.0.1:${address.port}/api/lottery/draw?preview=1`, {
       method: "POST",
@@ -346,6 +371,16 @@ test("lottery routes expose server state and the Pixi runtime animation contract
     assert.equal(drawBody.data.threshold, 50);
     assert.equal(drawBody.data.paidAmount, 36.4);
     assert.equal(drawBody.data.remainingDraws, 1);
+
+    const exchangeResponse = await fetch(`http://127.0.0.1:${address.port}/api/lottery/exchange?preview=1`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ count: 1 }),
+    });
+    const exchangeBody = await exchangeResponse.json();
+    assert.equal(exchangeResponse.status, 200);
+    assert.equal(exchangeBody.data.lotteryTokens, 2);
+    assert.equal(exchangeBody.data.points, 1180);
   } finally {
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   }

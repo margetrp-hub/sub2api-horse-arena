@@ -14,8 +14,8 @@ type RankingPanelOptions = {
     preview: boolean;
     paidAmount: number;
     threshold: number;
-    availableDraws: number;
-    starterDraws: number;
+    availableTokens: number;
+    starterTokens: number;
   };
   currentUser?: CurrentUserStatus | null;
   source?: "loading" | "loaded" | "stale" | "unavailable";
@@ -66,8 +66,8 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
     preview: false,
     paidAmount: 0,
     threshold: 50,
-    availableDraws: 0,
-    starterDraws: 0,
+    availableTokens: 0,
+    starterTokens: 0,
   };
   const lotteryProgress = Math.min(100, Math.max(0, (lottery.paidAmount / lottery.threshold) * 100));
   const lotteryStatus = lottery.preview ? "READY" : "LOCKED";
@@ -102,13 +102,13 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
         </div>
         <em>${lotteryStatus}</em>
       </div>
-      <p>消费每满 ${money(lottery.threshold)}，解锁 1 次扭蛋</p>
+      <p>消费每满 ${money(lottery.threshold)}，获得 1 枚抽奖代币</p>
       <div class="activity-entry-bottom">
         <div class="activity-entry-progress">
           <strong>${money(lottery.paidAmount)} / ${money(lottery.threshold)}</strong>
           <span><i style="width:${lotteryProgress.toFixed(2)}%"></i></span>
         </div>
-        <strong class="activity-entry-count">${lottery.availableDraws}<small>次</small></strong>
+        <strong class="activity-entry-count">${lottery.availableTokens}<small>枚</small></strong>
         <button class="lottery-open-button" type="button">${lotteryAction}</button>
       </div>
     </section>

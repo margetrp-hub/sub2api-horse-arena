@@ -18,6 +18,9 @@ const GUARANTEE_PRIZES = [
   { id: "balance-3", label: "余额 +3 元", detail: "保底普通奖 · 立即到账", kind: "balance", weight: 500 },
 ];
 
+const DEFAULT_POINTS = 1280;
+const DEFAULT_TOKEN_EXCHANGE_COST = 100;
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -43,11 +46,21 @@ function publicPrize(prize, grantStatus) {
 }
 
 function createUser(initialState) {
+  const lotteryTokens = Number.isFinite(Number(initialState.lotteryTokens))
+    ? Math.max(0, Math.floor(Number(initialState.lotteryTokens)))
+    : Math.max(0, Math.floor(Number(initialState.remainingDraws) || 0));
   return {
     paidAmount: initialState.paidAmount,
     threshold: initialState.threshold,
-    starterDraws: initialState.starterDraws,
-    remainingDraws: initialState.remainingDraws,
+    starterTokens: Number.isFinite(Number(initialState.starterTokens))
+      ? Math.max(0, Math.floor(Number(initialState.starterTokens)))
+      : Math.max(0, Math.floor(Number(initialState.starterDraws) || 0)),
+    lotteryTokens,
+    // Keep the old name in memory while clients migrate to lotteryTokens.
+    remainingDraws: lotteryTokens,
+    points: Number.isFinite(Number(initialState.points))
+      ? Math.max(0, Math.floor(Number(initialState.points)))
+      : DEFAULT_POINTS,
     missStreak: initialState.missStreak,
     idempotency: new Map(),
   };
@@ -67,6 +80,8 @@ export function createLotteryService({
     threshold: 50,
     starterDraws: 2,
     remainingDraws: 2,
+    points: DEFAULT_POINTS,
+    tokenExchangeCost: DEFAULT_TOKEN_EXCHANGE_COST,
     missStreak: 0,
   },
   grantReward = async ({ prize }) => ({
@@ -75,6 +90,9 @@ export function createLotteryService({
 } = {}) {
   const users = new Map();
   const locks = new Map();
+  const tokenExchangeCost = Number.isFinite(Number(initialState.tokenExchangeCost))
+    ? Math.max(1, Math.floor(Number(initialState.tokenExchangeCost)))
+    : DEFAULT_TOKEN_EXCHANGE_COST;
 
   function getUser(userId) {
     const key = String(userId ?? "").trim();
@@ -103,11 +121,41 @@ export function createLotteryService({
     return {
       paidAmount: user.paidAmount,
       threshold: user.threshold,
-      starterDraws: user.starterDraws,
+      starterTokens: user.starterTokens,
+      starterDraws: user.starterTokens,
+      lotteryTokens: user.lotteryTokens,
       remainingDraws: user.remainingDraws,
+      points: user.points,
+      tokenExchangeCost,
       missStreak: user.missStreak,
       animation: { key: "pixi-runtime", src: "runtime" },
     };
+  }
+
+  async function exchangePoints({ userId, count = 1 }) {
+    const parsedCount = Number(count);
+    if (!Number.isInteger(parsedCount) || parsedCount < 1 || parsedCount > 10) {
+      throw badRequest("count must be an integer between 1 and 10");
+    }
+
+    return withUserLock(userId, async () => {
+      const user = getUser(userId);
+      const pointsSpent = parsedCount * tokenExchangeCost;
+      if (user.points < pointsSpent) {
+        const error = new Error("not enough points to exchange lottery tokens");
+        error.code = "insufficient_points";
+        error.status = 409;
+        throw error;
+      }
+      user.points -= pointsSpent;
+      user.lotteryTokens += parsedCount;
+      user.remainingDraws = user.lotteryTokens;
+      return {
+        ...getState(userId),
+        exchangedTokens: parsedCount,
+        pointsSpent,
+      };
+    });
   }
 
   async function draw({ userId, count = 1, idempotencyKey }) {
@@ -124,7 +172,7 @@ export function createLotteryService({
       const user = getUser(userId);
       const previous = user.idempotency.get(key);
       if (previous) return clone(previous);
-      if (user.remainingDraws < parsedCount) {
+      if (user.lotteryTokens < parsedCount) {
         const error = new Error("not enough draw attempts");
         error.code = "insufficient_draws";
         error.status = 409;
@@ -155,7 +203,8 @@ export function createLotteryService({
         results.push(publicPrize(prize, grantStatus));
       }
 
-      user.remainingDraws -= parsedCount;
+      user.lotteryTokens -= parsedCount;
+      user.remainingDraws = user.lotteryTokens;
       user.missStreak = missStreak;
       const response = {
         drawId,
@@ -163,8 +212,12 @@ export function createLotteryService({
         results,
         paidAmount: user.paidAmount,
         threshold: user.threshold,
+        lotteryTokens: user.lotteryTokens,
         remainingDraws: user.remainingDraws,
-        starterDraws: user.starterDraws,
+        starterTokens: user.starterTokens,
+        starterDraws: user.starterTokens,
+        points: user.points,
+        tokenExchangeCost,
         missStreak: user.missStreak,
         grantStatus: results.every((prize) => ["committed", "not_applicable"].includes(prize.grantStatus))
           ? "committed"
@@ -177,6 +230,7 @@ export function createLotteryService({
 
   return {
     draw,
+    exchangePoints,
     getState,
     reset() {
       users.clear();

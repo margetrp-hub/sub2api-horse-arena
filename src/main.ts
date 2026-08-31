@@ -40,8 +40,8 @@ const lotteryState = {
   preview: lotteryPreview,
   paidAmount: lotteryPreview ? 36.4 : 0,
   threshold: 50,
-  availableDraws: lotteryPreview ? 2 : 0,
-  starterDraws: lotteryPreview ? 2 : 0,
+  availableTokens: lotteryPreview ? 2 : 0,
+  starterTokens: lotteryPreview ? 2 : 0,
 };
 const PERSONAL_ACTIVITY_KEY = "oh-haolema:personal-activity";
 function currentLocalDay(): string {
