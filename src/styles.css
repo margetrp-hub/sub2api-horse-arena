@@ -1,14 +1,14 @@
 :root {
-  --ink: #0c0920;
-  --paper: #fff4dc;
+  --ink: #071416;
+  --paper: #f5f1dc;
   --gold: #ffd166;
   --gold-soft: #ffe9a3;
-  --green: #4ee4c1;
-  --blue: #55a7ff;
-  --red: #ff5d7d;
-  --copper: #5b4d91;
-  --panel: #15112d;
-  --panel-raised: #20194a;
+  --green: #55dec0;
+  --blue: #72d7e1;
+  --red: #ff6b5b;
+  --copper: #2a8f85;
+  --panel: #0b1c20;
+  --panel-raised: #14383b;
 }
 
 * {
@@ -22,8 +22,8 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: #0c0920;
-  color: #fff4dc;
+  background: #071416;
+  color: #f5f1dc;
   font-family: "Courier New", "Microsoft YaHei", monospace;
 }
 
@@ -49,31 +49,10 @@ button {
   gap: 10px;
   align-items: center;
   padding: 14px;
-  background: #100c27;
-  border: 4px solid #8976c2;
-  box-shadow:
-    inset 0 0 0 2px #ffd166,
-    12px 12px 0 #080617;
-  background-image: linear-gradient(rgba(255, 255, 255, .025) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .025) 1px, transparent 1px);
-  background-size: 16px 16px;
   overflow: visible;
 }
 
-.game-shell::before {
-  content: "";
-  position: absolute;
-  z-index: 5;
-  top: 5px;
-  left: 12px;
-  width: 27%;
-  height: 3px;
-  background: var(--red);
-  box-shadow: 0 0 0 1px #080617;
-  pointer-events: none;
-  animation: shellSweep 4.2s steps(18, end) infinite;
-}
-
-@keyframes shellSweep {
+@keyframes panelSweep {
   0%, 12% { transform: translateX(0); opacity: .35; }
   48% { transform: translateX(250%); opacity: 1; }
   70%, 100% { transform: translateX(250%); opacity: .2; }
@@ -91,11 +70,26 @@ button {
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 4px solid #5b4d91;
-  background: #15112d;
+  border: 4px solid #2a8f85;
+  background: #0e2528;
   box-shadow:
     inset 0 0 0 2px #ffd166,
     8px 8px 0 #080617;
+}
+
+.playfield::before,
+.side-panel::before {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  top: 5px;
+  left: 12px;
+  width: 27%;
+  height: 3px;
+  background: var(--red);
+  box-shadow: 0 0 0 1px #080617;
+  pointer-events: none;
+  animation: panelSweep 4.2s steps(18, end) infinite;
 }
 
 .game-root {
@@ -111,6 +105,7 @@ button {
 }
 
 .side-panel {
+  position: relative;
   grid-area: rank;
   display: grid;
   min-width: 0;
@@ -122,7 +117,7 @@ button {
   padding: 14px;
   color: var(--paper);
   background: var(--panel);
-  border: 4px solid #8976c2;
+  border: 4px solid #2a8f85;
   box-shadow:
     inset 0 0 0 2px #ffd166,
     8px 8px 0 #080617;
@@ -550,11 +545,13 @@ button {
     font-size: 9px;
   }
 
-  .game-shell::before { top: 4px; left: 10px; }
+  .playfield::before,
+  .side-panel::before { top: 4px; left: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .game-shell::before {
+  .playfield::before,
+  .side-panel::before {
     animation: none;
     opacity: .55;
   }
@@ -578,8 +575,8 @@ button {
   min-width: 0;
   padding: 10px;
   color: var(--paper);
-  background: #2a2157;
-  border: 3px solid #8976c2;
+  background: #19464a;
+  border: 3px solid #2a8f85;
   box-shadow: 4px 4px 0 #080617;
 }
 
@@ -658,8 +655,8 @@ button {
   height: 8px;
   margin-top: 5px;
   padding: 1px;
-  background: #100c27;
-  border: 2px solid #5b4d91;
+  background: #0e2528;
+  border: 2px solid #2a8f85;
 }
 
 .activity-entry-progress i {
@@ -706,8 +703,8 @@ button {
 
 .rank-card,
 .self-card {
-  background: #20194a;
-  border: 2px solid #5b4d91;
+  background: #14383b;
+  border: 2px solid #2a8f85;
   box-shadow: 3px 3px 0 #080617, inset 0 0 0 1px rgba(255, 209, 102, .12);
 }
 
@@ -717,7 +714,7 @@ button {
 
 .rank-card:hover,
 .rank-card:focus-visible {
-  background: #30265f;
+  background: #235a5a;
   border-color: var(--green);
   outline: none;
   transform: translate(-2px, -2px);
@@ -726,22 +723,22 @@ button {
 .rank-card.is-selected {
   outline: 3px solid var(--green);
   outline-offset: -5px;
-  background: #30265f;
+  background: #235a5a;
 }
 
 .rank-card.is-self { border-color: var(--gold); }
 
 .rank-medal {
   color: var(--paper);
-  background: #30265f;
-  border-color: #8976c2;
+  background: #205356;
+  border-color: #2a8f85;
   box-shadow: 2px 2px 0 #080617;
 }
 
 .rank-card strong { color: var(--paper); }
-.rank-card span { color: #b9acd5; }
+.rank-card span { color: #b5d2cf; }
 .rank-card:nth-child(1) .rank-medal { color: var(--ink); background: var(--gold); }
-.rank-card:nth-child(2) .rank-medal { color: var(--ink); background: #d8d5ff; }
+.rank-card:nth-child(2) .rank-medal { color: var(--ink); background: #d7e8df; }
 .rank-card:nth-child(3) .rank-medal { color: var(--ink); background: var(--red); }
 
 .self-card {
@@ -756,8 +753,8 @@ button {
   min-width: 0;
   padding: 8px;
   color: var(--paper);
-  background: #15112d;
-  border: 2px solid #8976c2;
+  background: #0e2528;
+  border: 2px solid #2a8f85;
   box-shadow: 3px 3px 0 #080617;
 }
 
@@ -783,7 +780,7 @@ button {
 
 .personal-main { align-items: end; margin-top: 6px; }
 .personal-points { min-width: 0; }
-.personal-points small { display: block; color: #b9b1e6; font-size: 9px; }
+.personal-points small { display: block; color: #b5d2cf; font-size: 9px; }
 .personal-points strong { color: var(--gold); font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
 .personal-points label { margin-left: 3px; color: var(--green); font-size: 9px; }
 
@@ -808,9 +805,9 @@ button {
 }
 
 .checkin-button:disabled {
-  color: #b9acd5;
-  background: #5b4d91;
-  border-color: #8976c2;
+  color: #b5d2cf;
+  background: #235a5a;
+  border-color: #2a8f85;
   cursor: default;
   transform: none;
 }

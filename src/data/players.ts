@@ -15,7 +15,10 @@ export const players: Player[] = [
 
 export function formatTokens(value: number): string {
   const tokens = Math.max(0, Number(value) || 0) * 10000;
-  return tokens === 0 ? "0" : tokens.toExponential(2);
+  if (tokens >= 1e9) return `${(tokens / 1e9).toFixed(tokens >= 1e10 ? 1 : 2)}B`;
+  if (tokens >= 1e6) return `${(tokens / 1e6).toFixed(tokens >= 1e8 ? 1 : 2)}M`;
+  if (tokens >= 1e3) return `${(tokens / 1e3).toFixed(tokens >= 1e5 ? 1 : 2)}K`;
+  return tokens.toFixed(0);
 }
 
 export function selfPlayer(): Player {
