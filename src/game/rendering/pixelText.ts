@@ -1,6 +1,6 @@
 import { Text, TextStyle } from "pixi.js";
 
-const fontFamily = "\"Microsoft YaHei\", SimSun, monospace";
+const fontFamily = "\"Cascadia Mono\", \"Cascadia Code\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", monospace";
 
 export function pixelText(value: string, size: number, fill: string | number): Text {
   const text = new Text(

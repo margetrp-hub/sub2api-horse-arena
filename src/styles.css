@@ -24,7 +24,7 @@ body,
   overflow: hidden;
   background: #071416;
   color: #f5f1dc;
-  font-family: "Courier New", "Microsoft YaHei", monospace;
+  font-family: "Cascadia Mono", "Cascadia Code", "Microsoft YaHei UI", "Microsoft YaHei", monospace;
 }
 
 #app {
@@ -227,12 +227,12 @@ button {
 }
 
 .rank-card {
-  min-height: 44px;
+  min-height: 48px;
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
-  padding: 5px 7px;
+  padding: 6px 8px;
   cursor: pointer;
 }
 
@@ -269,7 +269,7 @@ button {
 
 .rank-card strong {
   color: #f4e4b8;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .rank-delta {
@@ -295,7 +295,7 @@ button {
 
 .rank-card span {
   color: #d39a4a;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .current-mark {

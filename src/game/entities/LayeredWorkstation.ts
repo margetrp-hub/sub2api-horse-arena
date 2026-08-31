@@ -70,7 +70,7 @@ export class LayeredWorkstation extends Container {
     this.horse.gotoAndPlay(options.index % this.horse.totalFrames);
     this.horseBaseY = this.horse.y;
 
-    const rankLabel = pixelText(String(options.player.rank).padStart(2, "0"), 62, 0x0b0805);
+    const rankLabel = pixelText(String(options.index + 1).padStart(2, "0"), 72, 0x0b0805);
     rankLabel.position.set(677, 952);
     const tokenLabel = pixelText(formatTokens(options.player.tokens), 58, 0xffe086);
     tokenLabel.position.set(770, 955);

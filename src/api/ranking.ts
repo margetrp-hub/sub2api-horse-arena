@@ -129,12 +129,11 @@ function screenFor(row: RankingRow, index: number): ScreenTheme {
   return SCREEN_THEMES[index % SCREEN_THEMES.length];
 }
 
-function stateFor(row: RankingRow, mode: HorseMode): string {
-  const model = String(row.model ?? "").trim();
+function stateFor(mode: HorseMode): string {
   if (mode === "sleep") return "暂时离开工位";
-  if (mode === "gaming") return model ? `${model} 摸鱼中` : "摸鱼中";
+  if (mode === "gaming") return "摸鱼中";
   if (mode === "overdrive") return "Token 冲刺中";
-  return model ? `${model} 工作中` : "API 工作中";
+  return "API 工作中";
 }
 
 function isSelf(row: RankingRow, currentUserId: RankingRow["user_id"]): boolean {
@@ -173,7 +172,7 @@ export async function fetchRankingSnapshot(signal?: AbortSignal): Promise<Rankin
       userId: row.user_id,
       name: String(row.name || "匿名用户"),
       tokens: Math.max(0, finite(row.tokens)) / 10000,
-      state: stateFor(row, mode),
+      state: stateFor(mode),
       mode,
       screen: screenFor(row, index),
       title: dailyTitle({

@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 
 :root {
+  --ui-font: "Cascadia Mono", "Cascadia Code", "Microsoft YaHei UI", "Microsoft YaHei", monospace;
   color-scheme: dark;
   --ink: #fff4dc;
   --muted: #a99bc4;
@@ -27,7 +28,7 @@ body {
   margin: 0;
   background: var(--bg-deep);
   color: var(--ink);
-  font-family: "Courier New", "Microsoft YaHei", monospace;
+  font-family: var(--ui-font);
   overflow-x: hidden;
 }
 
@@ -82,7 +83,7 @@ button:disabled { cursor: not-allowed; }
   background: var(--coral);
   border: 3px solid var(--gold);
   box-shadow: 4px 4px 0 var(--bg-deep);
-  font-family: "Press Start 2P", "Courier New", monospace;
+  font-family: "Press Start 2P", var(--ui-font);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: .06em;
@@ -91,7 +92,7 @@ button:disabled { cursor: not-allowed; }
 .brand-lockup strong,
 .brand-lockup small { display: block; }
 .brand-lockup strong { font-size: 16px; letter-spacing: .06em; }
-.brand-lockup small { margin-top: 3px; color: var(--muted); font: 10px/1 "Courier New", monospace; letter-spacing: .08em; }
+.brand-lockup small { margin-top: 3px; color: var(--muted); font: 10px/1 var(--ui-font); letter-spacing: .08em; }
 
 .topbar-meta { display: flex; align-items: center; gap: 22px; }
 
@@ -100,7 +101,7 @@ button:disabled { cursor: not-allowed; }
   align-items: center;
   gap: 7px;
   color: var(--mint);
-  font: 11px "Courier New", monospace;
+  font: 11px var(--ui-font);
 }
 
 .activity-pill i {
@@ -143,7 +144,7 @@ button:disabled { cursor: not-allowed; }
 .card-label,
 .result-kicker {
   color: var(--cyan);
-  font: 11px "Courier New", monospace;
+  font: 11px var(--ui-font);
   letter-spacing: .15em;
   text-transform: uppercase;
 }
@@ -196,7 +197,7 @@ button:disabled { cursor: not-allowed; }
   gap: 18px;
   justify-content: center;
   color: var(--muted);
-  font: 11px "Courier New", monospace;
+  font: 11px var(--ui-font);
 }
 
 .hero-note span + span { color: var(--gold); }
@@ -206,7 +207,7 @@ button:disabled { cursor: not-allowed; }
 .lottery-rail { display: grid; gap: 10px; min-width: 0; width: min(100%, 420px); justify-self: end; }
 
 .rail-heading { position: relative; display: block; padding: 0 0 7px; }
-.rail-heading h2 { margin: 10px 0 0; color: var(--cream); font-family: "Press Start 2P", "Courier New", monospace; font-size: clamp(31px, 4.1vw, 56px); line-height: 1.18; letter-spacing: 0; text-shadow: 5px 5px 0 var(--bg-deep); }
+.rail-heading h2 { margin: 10px 0 0; color: var(--cream); font-family: "Press Start 2P", var(--ui-font); font-size: clamp(31px, 4.1vw, 56px); line-height: 1.18; letter-spacing: 0; text-shadow: 5px 5px 0 var(--bg-deep); }
 .rail-heading h2 span { color: var(--coral); }
 .rail-heading p { margin: 13px 0 0; color: var(--muted-strong); font-size: 14px; }
 
@@ -218,7 +219,7 @@ button:disabled { cursor: not-allowed; }
   color: var(--gold);
   border: 2px solid rgba(255,209,102,.6);
   box-shadow: 3px 3px 0 var(--bg-deep);
-  font: 10px "Courier New", monospace;
+  font: 10px var(--ui-font);
 }
 
 .progress-card,
@@ -235,27 +236,27 @@ button:disabled { cursor: not-allowed; }
 .prize-card { padding: 15px 16px; }
 
 .card-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #382d62; letter-spacing: .03em; text-transform: none; }
-.card-label span { color: #796a9d; font: 10px "Courier New", monospace; }
+.card-label span { color: #796a9d; font: 10px var(--ui-font); }
 
 .progress-value { display: flex; align-items: baseline; gap: 8px; margin-top: 13px; }
 .progress-value strong { color: #24174e; font-size: 39px; line-height: .95; letter-spacing: 0; }
-.progress-value span { color: #796a9d; font: 12px "Courier New", monospace; }
+.progress-value span { color: #796a9d; font: 12px var(--ui-font); }
 
 .progress-track { height: 14px; margin-top: 12px; padding: 2px; background: #d8c9f0; border: 2px solid #796a9d; }
 .progress-track i { display: block; height: 100%; background: var(--coral); box-shadow: 3px 3px 0 #24174e; transition: width .5s steps(6, end); }
-.progress-meta { display: flex; justify-content: space-between; gap: 14px; margin-top: 8px; color: #796a9d; font: 10px "Courier New", monospace; }
+.progress-meta { display: flex; justify-content: space-between; gap: 14px; margin-top: 8px; color: #796a9d; font: 10px var(--ui-font); }
 
 .chance-card { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.chance-number { display: block; margin-top: 7px; color: #1d9c8d; font-family: "Press Start 2P", "Courier New", monospace; font-size: 36px; line-height: 1; letter-spacing: 0; text-shadow: 3px 3px 0 #a8f5df; }
-.chance-detail { display: grid; gap: 5px; justify-items: end; color: #796a9d; font: 11px "Courier New", monospace; text-align: right; }
+.chance-number { display: block; margin-top: 7px; color: #1d9c8d; font-family: "Press Start 2P", var(--ui-font); font-size: 36px; line-height: 1; letter-spacing: 0; text-shadow: 3px 3px 0 #a8f5df; }
+.chance-detail { display: grid; gap: 5px; justify-items: end; color: #796a9d; font: 11px var(--ui-font); text-align: right; }
 .chance-detail small { color: #bd7f00; font-size: 10px; }
 .chance-detail .chance-error { color: #b22d5b; font-size: 10px; }
 
 .action-card { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; }
 .draw-action { min-height: 70px; padding: 11px 14px; border: 3px solid var(--line-bright); text-align: left; transition: transform .12s steps(2, end), border-color .12s, background .12s; }
 .draw-action span, .draw-action small { display: block; }
-.draw-action span { font-family: "Press Start 2P", "Courier New", monospace; font-size: 13px; font-weight: 800; letter-spacing: 0; }
-.draw-action small { margin-top: 5px; font: 10px "Courier New", monospace; }
+.draw-action span { font-family: "Press Start 2P", var(--ui-font); font-size: 13px; font-weight: 800; letter-spacing: 0; }
+.draw-action small { margin-top: 5px; font: 10px var(--ui-font); }
 .draw-action.primary { color: var(--bg-deep); background: var(--coral); border-color: var(--coral-soft); box-shadow: 4px 4px 0 var(--bg-deep); }
 .draw-action.primary small { color: #3d1712; }
 .draw-action.secondary { color: var(--cream); background: var(--panel); }
@@ -271,7 +272,7 @@ button:disabled { cursor: not-allowed; }
 .subscription-art { background: var(--cyan); }
 .coupon-art { background: var(--coral); }
 .empty-art { color: var(--muted-strong); background: #76699b; }
-.prize-item span { color: #796a9d; font: 10px "Courier New", monospace; }
+.prize-item span { color: #796a9d; font: 10px var(--ui-font); }
 .prize-item strong { margin-top: 3px; color: #24174e; font-size: 12px; font-weight: 700; }
 .prize-item.muted strong { color: #796a9d; }
 
@@ -308,14 +309,14 @@ button:disabled { cursor: not-allowed; }
 }
 
 .lottery-result-modal h2 { margin: 11px 0 9px; color: #24174e; font-size: 28px; line-height: 1.06; }
-.lottery-result-modal p { margin: 13px 0 0; color: #796a9d; font: 10px/1.55 "Courier New", monospace; }
+.lottery-result-modal p { margin: 13px 0 0; color: #796a9d; font: 10px/1.55 var(--ui-font); }
 .lottery-result-modal .opened-capsule-art { position: absolute; right: 24px; top: 25px; width: 84px; height: 84px; object-fit: contain; filter: drop-shadow(0 7px 6px rgba(0,0,0,.3)); animation: capsuleReveal 480ms cubic-bezier(.2,.8,.2,1) both; }
 .result-close { position: absolute; top: 10px; right: 12px; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; color: #796a9d; background: transparent; border: 2px solid #c7b6df; font-size: 20px; line-height: 1; }
 .result-close:hover, .result-close:focus-visible { color: #24174e; border-color: var(--coral); outline: none; }
 .result-confirm { margin-top: 18px; min-height: 40px; padding: 9px 18px; color: var(--bg-deep); background: var(--cyan); border: 3px solid #a8f5df; font-size: 12px; font-weight: 800; transition: transform .12s steps(2, end), box-shadow .12s; }
 .result-confirm:hover, .result-confirm:focus-visible { transform: translate(-3px, -3px); box-shadow: 4px 4px 0 var(--bg-deep); outline: none; }
 
-.rule-strip { display: flex; justify-content: space-between; gap: 12px; padding: 3px 1px 0; color: var(--muted); font: 10px "Courier New", monospace; }
+.rule-strip { display: flex; justify-content: space-between; gap: 12px; padding: 3px 1px 0; color: var(--muted); font: 10px var(--ui-font); }
 .rule-strip span:last-child { color: var(--gold); text-align: right; }
 
 @keyframes capsuleReveal {

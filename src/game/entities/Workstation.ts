@@ -48,7 +48,7 @@ export class Workstation extends Container {
     this.placeHorse(options.player);
     this.horseBaseY = this.horse.y;
 
-    this.rankLabel = pixelText(String(options.player.rank).padStart(2, "0"), 9, 0x0b0805);
+    this.rankLabel = pixelText(String(options.index + 1).padStart(2, "0"), 10, 0x0b0805);
     this.rankLabel.position.set(18, 160);
 
     this.tokenLabel = pixelText(`#${options.player.rank}`, 8, 0xffe086);

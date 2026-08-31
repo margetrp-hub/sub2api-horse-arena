@@ -7,6 +7,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
+    --ui-font: "Cascadia Mono", "Cascadia Code", "Microsoft YaHei UI", "Microsoft YaHei", monospace;
     --gold: #ffd166;
     --green: #55dec0;
     --cyan: #72d7e1;
@@ -20,7 +21,7 @@
     height: 100%;
     background: #071416;
     color: var(--ink);
-    font-family: "Courier New", "PingFang SC", "Microsoft YaHei", monospace;
+    font-family: var(--ui-font);
     overflow: hidden;
   }
   #stage {
@@ -104,7 +105,7 @@
   @keyframes blink { 50% { opacity: 0.25; } }
   #rankList { position: relative; min-height: 0; flex: 1; overflow-y: auto; scrollbar-color: var(--line) var(--panel); }
   .rrow {
-    display: flex; align-items: center; gap: 8px; font-size: 12px;
+    display: flex; align-items: center; gap: 8px; font-size: 13px;
     padding: 6px; border-radius: 0; cursor: pointer;
     background: #19464a; border: 1px solid var(--line); margin-bottom: 5px;
     box-shadow: 2px 2px 0 #080617;
@@ -112,7 +113,7 @@
   }
   .rrow:hover { transform: translate(-2px, -2px); background: #235a5a; border-color: var(--green); box-shadow: 4px 4px 0 #080617; }
   .rrow.hot { background: #205356; border-color: var(--cyan); box-shadow: 3px 3px 0 #080617; }
-  .rrow .rk { width: 22px; text-align: center; font-weight: 800; color: #b5d2cf; }
+  .rrow .rk { width: 24px; text-align: center; font-weight: 800; color: #b5d2cf; }
   .rrow.top .rk { color: var(--gold); }
   .rrow:nth-child(2) .rk { color: #d7e8df; }
   .rrow:nth-child(3) .rk { color: var(--pink); }
@@ -137,7 +138,7 @@
   .personal-points small { display: block; color: #b5d2cf; font-size: 9px; }
   .personal-points strong { color: var(--gold); font-size: 23px; line-height: 1; font-variant-numeric: tabular-nums; }
   .personal-points label { margin-left: 3px; color: var(--green); font-size: 9px; }
-  .checkin-button { min-height: 28px; padding: 5px 8px; color: #071416; background: var(--pink); border: 2px solid #ffdbe3; border-radius: 0; box-shadow: 3px 3px 0 #080617; font: 900 10px "Courier New", monospace; cursor: pointer; }
+  .checkin-button { min-height: 28px; padding: 5px 8px; color: #071416; background: var(--pink); border: 2px solid #ffdbe3; border-radius: 0; box-shadow: 3px 3px 0 #080617; font: 900 10px var(--ui-font); cursor: pointer; }
   .checkin-button:hover { background: var(--gold); transform: translate(-1px, -1px); }
   .checkin-button:disabled { color: #c3d8d4; background: #235a5a; border-color: var(--line); cursor: default; transform: none; }
 
@@ -145,11 +146,11 @@
   #tip {
     position: absolute; z-index: 30; pointer-events: none; display: none;
     background: #0e2528; border: 2px solid var(--cyan);
-    border-radius: 0; padding: 8px 10px; font-size: 11px; min-width: 156px;
+    border-radius: 0; padding: 10px 12px; font-size: 13px; min-width: 176px;
     box-shadow: 4px 4px 0 #080617;
   }
-  #tip .t { color: var(--gold); font-weight: 700; font-size: 12px; margin-bottom: 5px; }
-  #tip .l { display: flex; justify-content: space-between; gap: 14px; color: #b9c8de; line-height: 1.6; }
+  #tip .t { color: var(--gold); font-weight: 700; font-size: 14px; margin-bottom: 7px; }
+  #tip .l { display: flex; justify-content: space-between; gap: 16px; color: #c4ded9; line-height: 1.8; }
   #tip .l b { color: var(--cyan); font-variant-numeric: tabular-nums; font-weight: 700; }
 
   /* 单人明细弹窗 */
@@ -213,9 +214,9 @@
     .stat .v, .stat .v.small { font-size: 12px; }
     #rankPanel { grid-column: 2; grid-row: 1 / span 2; height: 100%; padding: 6px; }
     #rankPanel h3 { margin-bottom: 4px; padding-bottom: 4px; font-size: 11px; }
-    .rrow { gap: 5px; padding: 3px; margin-bottom: 2px; font-size: 9px; }
+    .rrow { gap: 5px; padding: 4px; margin-bottom: 2px; font-size: 10px; }
     .rrow .av { width: 14px; height: 14px; }
-    .rrow .rk { width: 18px; }
+    .rrow .rk { width: 20px; }
     .personal-card { margin-top: 5px; padding: 5px; }
     .personal-rank-line { padding-bottom: 4px; margin-bottom: 4px; }
     .personal-rank-line small, .personal-rank-line em { font-size: 8px; }
@@ -244,7 +245,7 @@
   .activity-entry-progress i { display: block; height: 100%; background: var(--gold); }
   .activity-entry-count { color: var(--gold); font-size: 21px; line-height: 1; font-variant-numeric: tabular-nums; }
   .activity-entry-count small { margin-left: 2px; color: var(--ink); font-size: 9px; }
-  .lottery-open-button { grid-column: 1 / -1; min-height: 32px; padding: 6px 8px; color: #071416; background: var(--green); border: 2px solid #d8fff3; border-radius: 0; box-shadow: 3px 3px 0 #080617; font: 900 12px "Courier New", monospace; cursor: pointer; }
+  .lottery-open-button { grid-column: 1 / -1; min-height: 32px; padding: 6px 8px; color: #071416; background: var(--green); border: 2px solid #d8fff3; border-radius: 0; box-shadow: 3px 3px 0 #080617; font: 900 12px var(--ui-font); cursor: pointer; }
   .lottery-open-button:hover { background: var(--gold); transform: translate(-1px, -1px); }
   .lottery-open-button:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
   @media (max-width: 900px) {
@@ -443,16 +444,16 @@ const BOSS_FPS = 3.2;
 // --- 用户数据（占位假数据）--------------------------------------------------
 // tokens 单位：万。rate：基础消耗速率（万/秒）。接真实接口时替换此数组即可。
 const USERS = [
-  { name: "155***@qq.com",       model: "Claude-3.5-Sonnet", reqs: 48210, days: 213, tokens: 1782.4, rate: 5.2,  mode: "work",  color: "#7fe3ff" },
-  { name: "ada***@gmail.com",    model: "GPT-4o",            reqs: 39880, days: 168, tokens: 1655.1, rate: 9.4,  mode: "game",  color: "#63e990" },
-  { name: "wolf***@outlook.com", model: "DeepSeek-V3",       reqs: 51340, days: 145, tokens: 1521.7, rate: 7.1,  mode: "game",  color: "#ffe086" },
-  { name: "cs2***@foxmail.com",  model: "Gemini-1.5-Pro",    reqs: 33120, days: 121, tokens: 1493.9, rate: 11.3, mode: "game",  color: "#ff9e6d" },
-  { name: "video***@qq.com",     model: "Claude-3-Opus",     reqs: 27760, days: 98,  tokens: 1361.2, rate: 6.0,  mode: "work",  color: "#c58bff" },
-  { name: "flux***@qq.com",      model: "GPT-4o-mini",       reqs: 61020, days: 77,  tokens: 1330.6, rate: 12.6, mode: "work",  color: "#ff7ba8" },
-  { name: "rank***@qq.com",      model: "Qwen-Max",          reqs: 22940, days: 64,  tokens: 1208.3, rate: 8.2,  mode: "work",  color: "#8be0c0" },
-  { name: "card***@gmail.com",   model: "GLM-4-Plus",        reqs: 19980, days: 52,  tokens: 1179.5, rate: 10.1, mode: "game",  color: "#f0d060" },
-  { name: "afk***@qq.com",       model: "Llama-3.1-405B",    reqs: 8840,  days: 33,  tokens: 982.7,  rate: 4.1,  mode: "sleep", color: "#6da8ff" },
-  { name: "fish***@qq.com",      model: "Mistral-Large",     reqs: 7260,  days: 21,  tokens: 861.4,  rate: 6.4,  mode: "sleep", color: "#e07d7d" },
+  { name: "155***@qq.com",       reqs: 48210, days: 213, tokens: 1782.4, rate: 5.2,  mode: "work",  color: "#7fe3ff" },
+  { name: "ada***@gmail.com",    reqs: 39880, days: 168, tokens: 1655.1, rate: 9.4,  mode: "game",  color: "#63e990" },
+  { name: "wolf***@outlook.com", reqs: 51340, days: 145, tokens: 1521.7, rate: 7.1,  mode: "game",  color: "#ffe086" },
+  { name: "cs2***@foxmail.com",  reqs: 33120, days: 121, tokens: 1493.9, rate: 11.3, mode: "game",  color: "#ff9e6d" },
+  { name: "video***@qq.com",     reqs: 27760, days: 98,  tokens: 1361.2, rate: 6.0,  mode: "work",  color: "#c58bff" },
+  { name: "flux***@qq.com",      reqs: 61020, days: 77,  tokens: 1330.6, rate: 12.6, mode: "work",  color: "#ff7ba8" },
+  { name: "rank***@qq.com",      reqs: 22940, days: 64,  tokens: 1208.3, rate: 8.2,  mode: "work",  color: "#8be0c0" },
+  { name: "card***@gmail.com",   reqs: 19980, days: 52,  tokens: 1179.5, rate: 10.1, mode: "game",  color: "#f0d060" },
+  { name: "afk***@qq.com",       reqs: 8840,  days: 33,  tokens: 982.7,  rate: 4.1,  mode: "sleep", color: "#6da8ff" },
+  { name: "fish***@qq.com",      reqs: 7260,  days: 21,  tokens: 861.4,  rate: 6.4,  mode: "sleep", color: "#e07d7d" },
 ];
 
 // ===========================================================================
@@ -550,7 +551,6 @@ function applyLiveRanking(data) {
       id: index,
       sourceId: safeNumber(row.user_id, index),
       name: maskDisplayName(row.name),
-      model: String(row.model || "NewAPI Usage").slice(0, 80),
       reqs: Math.max(0, Math.round(safeNumber(row.requests))),
       days: Math.max(1, Math.round(safeNumber(row.days, 1))),
       tokens: Math.max(0, safeNumber(row.tokens)) / 10000,
@@ -569,7 +569,6 @@ function applyLiveRanking(data) {
       id: index,
       sourceId: 0,
       name: "空机位 " + (index + 1),
-      model: "等待用户上线",
       reqs: 0,
       days: 1,
       tokens: 0,
@@ -1070,26 +1069,24 @@ function drawHighlight() {
     ctx.restore();
   }
 }
-// 工位名次徽章：把画面和右侧榜单绑在一起，反超换位时数字实时变
-const RANK_COL = ["#ffcf3a", "#d6dde6", "#cf8a48"]; // 金 / 银 / 铜
+// 工位编号：桌面固定显示 1-10，左侧榜单才按总 Token 消耗计算名次
 function drawBadge(st) {
   const u = state.users[st.playerIndex];
-  const rk = rankOf(u.id);
-  const top3 = rk <= 3;
+  const stationNo = st.playerIndex + 1;
   const w = Math.max(34, st.dw * 0.14);
   const h = Math.max(24, st.dh * 0.075);
   const x = st.x + st.dw * 0.68;
   const y = st.y + st.dh * 0.78;
   ctx.save();
-  ctx.fillStyle = top3 ? RANK_COL[rk - 1] : "rgba(12,16,26,0.92)";
+  ctx.fillStyle = bursting(u) ? "#6a2e1f" : "rgba(12,16,26,0.92)";
   ctx.fillRect(x, y, w, h);
   ctx.lineWidth = 2;
-  ctx.strokeStyle = bursting(u) ? "#ff6b3d" : top3 ? "#7a5a12" : "#2a3a52";
+  ctx.strokeStyle = bursting(u) ? "#ff6b3d" : "#2a8f85";
   ctx.strokeRect(x, y, w, h);
-  ctx.fillStyle = top3 ? "#3a2a06" : "#eaf2ff";
-  ctx.font = "bold " + Math.round(h * 0.58) + "px 'Segoe UI', sans-serif";
+  ctx.fillStyle = "#eaf2ff";
+  ctx.font = "bold " + Math.round(h * 0.72) + "px 'Cascadia Mono', 'Microsoft YaHei UI', monospace";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillText(rk, x + w / 2, y + h / 2 + 1);
+  ctx.fillText(stationNo, x + w / 2, y + h / 2 + 1);
   ctx.restore();
 }
 // ---------------------------------------------------------------------------
@@ -1289,11 +1286,9 @@ function showTipFor(id, clientX, clientY) {
   if (!u) return;
   const rk = rankOf(id);
   const displayName = escapeHtml(u.name);
-  const displayModel = escapeHtml(u.model);
   tip.innerHTML =
     '<div class="t">' + displayName + '</div>' +
     '<div class="l"><span>排名</span><b>#' + rk + '</b></div>' +
-    '<div class="l"><span>模型</span><b>' + displayModel + '</b></div>' +
     '<div class="l"><span>累计 Token</span><b>' + fmt(u.tokens) + '</b></div>' +
     '<div class="l"><span>当前速率</span><b>' + fmt(effRate(u)) + ' Token/s</b></div>' +
     (bursting(u) ? '<div class="l"><span>状态</span><b style="color:#ff9e6d">🔥 爆刷中</b></div>' : '');
@@ -1329,13 +1324,12 @@ function openDetail(id) {
   ).join("");
   const dayLabel = state.dataSource === "live" ? "近 7 日活跃 " : "注册 ";
   const displayName = escapeHtml(u.name);
-  const displayModel = escapeHtml(u.model);
   const card = document.getElementById("card");
   card.innerHTML =
     '<div class="hd">' +
       '<span class="sw" style="background:' + u.color + '"></span>' +
       '<div><div class="nm">' + displayName + '</div>' +
-      '<div class="sub">' + displayModel + ' · ' + dayLabel + u.days + ' 天</div></div>' +
+      '<div class="sub">' + dayLabel + u.days + ' 天</div></div>' +
       '<span class="rkbig">' + medal + '</span>' +
     '</div>' +
     '<div class="grid">' +
