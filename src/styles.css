@@ -1,14 +1,14 @@
 :root {
-  --ink: #050504;
-  --paper: #e8c77a;
-  --gold: #f3b43f;
-  --gold-soft: #ffe086;
-  --green: #63e990;
-  --blue: #5bc8ff;
-  --red: #ef5d45;
-  --copper: #6f3e1e;
-  --panel: #100e0a;
-  --panel-raised: #18140e;
+  --ink: #0c0920;
+  --paper: #fff4dc;
+  --gold: #ffd166;
+  --gold-soft: #ffe9a3;
+  --green: #4ee4c1;
+  --blue: #55a7ff;
+  --red: #ff5d7d;
+  --copper: #5b4d91;
+  --panel: #15112d;
+  --panel-raised: #20194a;
 }
 
 * {
@@ -22,9 +22,9 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: #070504;
-  color: #ffe6a4;
-  font-family: "Microsoft YaHei", "SimSun", monospace;
+  background: #0c0920;
+  color: #fff4dc;
+  font-family: "Courier New", "Microsoft YaHei", monospace;
 }
 
 button {
@@ -42,7 +42,7 @@ button {
   gap: 10px;
   align-items: center;
   padding: 10px;
-  background: #050403;
+  background: #0c0920;
 }
 
 .playfield {
@@ -57,11 +57,11 @@ button {
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 4px solid #4c2b17;
-  background: #080706;
+  border: 4px solid #5b4d91;
+  background: #15112d;
   box-shadow:
-    inset 0 0 0 2px #9a5a29,
-    8px 8px 0 rgba(0, 0, 0, 0.62);
+    inset 0 0 0 2px #ffd166,
+    8px 8px 0 #080617;
 }
 
 .game-root {
@@ -83,15 +83,15 @@ button {
   width: 100%;
   height: min(calc(100vh - 20px), 960px);
   align-self: center;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 10px;
   padding: 14px;
-  color: #f3dfaa;
+  color: var(--paper);
   background: var(--panel);
-  border: 4px solid #5b3219;
+  border: 4px solid #8976c2;
   box-shadow:
-    inset 0 0 0 2px #9a5a29,
-    8px 8px 0 rgba(0, 0, 0, 0.62);
+    inset 0 0 0 2px #ffd166,
+    8px 8px 0 #080617;
 }
 
 .side-header {
@@ -115,7 +115,7 @@ button {
 .side-header span,
 .self-card span {
   display: block;
-  color: #55d9d0;
+  color: var(--green);
   font-size: 12px;
   font-weight: 900;
   line-height: 1.1;
@@ -125,29 +125,29 @@ button {
   display: inline-block;
   margin-top: 5px;
   padding: 2px 5px;
-  border: 1px solid #377a4c;
-  color: #84f2a4;
+  border: 2px solid #2ca58e;
+  color: var(--green);
   font-size: 9px;
   font-style: normal;
   line-height: 1;
 }
 
 .side-heading em.source-loading {
-  border-color: #8e6a2f;
+  border-color: #a97823;
   color: var(--gold-soft);
 }
 
 .side-heading em.source-stale,
 .side-heading em.source-unavailable {
-  border-color: #99512e;
-  color: #ffb47e;
+  border-color: #a63f61;
+  color: #ffb4cb;
 }
 
 .side-header strong {
   color: var(--gold);
   font-size: 34px;
   line-height: 0.86;
-  text-shadow: 3px 3px 0 #3f1c0c;
+  text-shadow: 3px 3px 0 #080617;
 }
 
 .side-header .desktop-top {
@@ -520,6 +520,274 @@ button {
     animation: none;
     transition: none;
   }
+}
+
+/* Pixel activity-center rail. The entry stays above the ranking so it is always discoverable. */
+.side-panel {
+  background-image: linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+  background-size: 18px 18px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+}
+
+.activity-entry {
+  position: relative;
+  grid-row: 2;
+  min-width: 0;
+  padding: 10px;
+  color: var(--paper);
+  background: #2a2157;
+  border: 3px solid #8976c2;
+  box-shadow: 4px 4px 0 #080617;
+}
+
+.activity-entry::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: 10px;
+  width: 56px;
+  height: 3px;
+  background: var(--red);
+  box-shadow: 64px 0 0 var(--green), 128px 0 0 var(--gold);
+}
+
+.activity-entry-head,
+.activity-entry-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.activity-entry-kicker {
+  display: block;
+  color: var(--green);
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.activity-entry-head > div > strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--paper);
+  font-size: 19px;
+  line-height: 1;
+  text-shadow: 2px 2px 0 #080617;
+}
+
+.activity-entry-head em {
+  flex: 0 0 auto;
+  padding: 4px 6px;
+  color: var(--ink);
+  background: var(--gold);
+  border: 2px solid var(--gold-soft);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+  box-shadow: 2px 2px 0 #080617;
+}
+
+.activity-entry p {
+  margin: 8px 0 9px;
+  color: #c9bce0;
+  font-size: 10px;
+}
+
+.activity-entry-bottom { align-items: end; }
+
+.activity-entry-progress {
+  min-width: 0;
+  flex: 1;
+}
+
+.activity-entry-progress > strong {
+  display: block;
+  overflow: hidden;
+  color: var(--gold-soft);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-entry-progress > span {
+  display: block;
+  height: 8px;
+  margin-top: 5px;
+  padding: 1px;
+  background: #100c27;
+  border: 2px solid #5b4d91;
+}
+
+.activity-entry-progress i {
+  display: block;
+  height: 100%;
+  background: var(--red);
+  box-shadow: 2px 0 0 var(--gold);
+}
+
+.activity-entry-count {
+  min-width: 34px;
+  color: var(--green);
+  font-size: 23px;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 2px 2px 0 #080617;
+}
+
+.activity-entry-count small {
+  margin-left: 2px;
+  color: var(--paper);
+  font-size: 9px;
+}
+
+.activity-entry .lottery-open-button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 6px 8px;
+  color: var(--ink);
+  background: var(--red);
+  border: 3px solid var(--coral-soft, #ffb4cb);
+  box-shadow: 3px 3px 0 #080617;
+  font-size: 10px;
+  font-weight: 900;
+  transition: transform 100ms steps(2, end), background 100ms steps(2, end);
+}
+
+.activity-entry .lottery-open-button:hover,
+.activity-entry .lottery-open-button:focus-visible {
+  background: var(--gold);
+  outline: none;
+  transform: translate(-2px, -2px);
+}
+
+.rank-card,
+.self-card {
+  background: #20194a;
+  border: 2px solid #5b4d91;
+  box-shadow: 3px 3px 0 #080617, inset 0 0 0 1px rgba(255, 209, 102, .12);
+}
+
+.rank-card {
+  transition: transform 100ms steps(2, end), border-color 100ms steps(2, end), background 100ms steps(2, end);
+}
+
+.rank-card:hover,
+.rank-card:focus-visible {
+  background: #30265f;
+  border-color: var(--green);
+  outline: none;
+  transform: translate(-2px, -2px);
+}
+
+.rank-card.is-selected {
+  outline: 3px solid var(--green);
+  outline-offset: -5px;
+  background: #30265f;
+}
+
+.rank-card.is-self { border-color: var(--gold); }
+
+.rank-medal {
+  color: var(--paper);
+  background: #30265f;
+  border-color: #8976c2;
+  box-shadow: 2px 2px 0 #080617;
+}
+
+.rank-card strong { color: var(--paper); }
+.rank-card span { color: #b9acd5; }
+.rank-card:nth-child(1) .rank-medal { color: var(--ink); background: var(--gold); }
+.rank-card:nth-child(2) .rank-medal { color: var(--ink); background: #d8d5ff; }
+.rank-card:nth-child(3) .rank-medal { color: var(--ink); background: var(--red); }
+
+.self-card {
+  grid-row: 5;
+  padding: 10px;
+}
+
+.self-card strong { color: var(--paper); }
+
+.personal-card {
+  grid-row: 4;
+  min-width: 0;
+  padding: 8px;
+  color: var(--paper);
+  background: #15112d;
+  border: 2px solid #8976c2;
+  box-shadow: 3px 3px 0 #080617;
+}
+
+.personal-head,
+.personal-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.personal-head span {
+  color: var(--green);
+  font-size: 9px;
+  letter-spacing: .08em;
+}
+
+.personal-head em {
+  color: var(--gold);
+  font-size: 9px;
+  font-style: normal;
+}
+
+.personal-main { align-items: end; margin-top: 6px; }
+.personal-points { min-width: 0; }
+.personal-points small { display: block; color: #b9b1e6; font-size: 9px; }
+.personal-points strong { color: var(--gold); font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.personal-points label { margin-left: 3px; color: var(--green); font-size: 9px; }
+
+.checkin-button {
+  min-height: 28px;
+  padding: 5px 7px;
+  color: var(--ink);
+  background: var(--red);
+  border: 2px solid var(--coral-soft, #ffb4cb);
+  box-shadow: 3px 3px 0 #080617;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 100ms steps(2, end), background 100ms steps(2, end);
+}
+
+.checkin-button:hover,
+.checkin-button:focus-visible {
+  background: var(--gold);
+  outline: none;
+  transform: translate(-2px, -2px);
+}
+
+.checkin-button:disabled {
+  color: #b9acd5;
+  background: #5b4d91;
+  border-color: #8976c2;
+  cursor: default;
+  transform: none;
+}
+
+@media (max-width: 760px) {
+  .game-shell { grid-template-rows: auto 360px; }
+  .side-panel {
+    height: 360px;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  }
+  .ranking { grid-row: 3; }
+  .personal-card { padding: 6px; }
+  .personal-points strong { font-size: 18px; }
+  .checkin-button { min-height: 25px; padding: 4px 5px; font-size: 8px; }
+  .activity-entry { padding: 7px 8px; }
+  .activity-entry-head > div > strong { font-size: 15px; }
+  .activity-entry p { margin: 5px 0 6px; font-size: 9px; }
+  .activity-entry-bottom { gap: 5px; }
+  .activity-entry-count { min-width: 27px; font-size: 18px; }
+  .activity-entry .lottery-open-button { min-height: 28px; padding: 4px 6px; font-size: 8px; }
 }
 
 /* Lucky capsule design pass: the service will replace preview state later. */

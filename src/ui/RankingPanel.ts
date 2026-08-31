@@ -7,6 +7,9 @@ type RankingPanelOptions = {
   selected: Player;
   onSelect: (player: Player) => void;
   onLotteryOpen?: () => void;
+  onCheckin?: () => void;
+  personalPoints?: number;
+  checkedIn?: boolean;
   lottery?: {
     preview: boolean;
     paidAmount: number;
@@ -67,8 +70,11 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
     starterDraws: 0,
   };
   const lotteryProgress = Math.min(100, Math.max(0, (lottery.paidAmount / lottery.threshold) * 100));
-  const lotteryStatus = lottery.preview ? "本地设计预览" : "活动服务待接入";
-  const lotteryAction = lottery.preview ? "去扭蛋" : "查看设计";
+  const lotteryStatus = lottery.preview ? "READY" : "LOCKED";
+  const lotteryAction = lottery.preview ? "进入扭蛋机" : "查看活动";
+  const personalPoints = Math.max(0, Math.floor(options.personalPoints ?? 1280));
+  const checkinAction = options.checkedIn ? "已签到 +10" : "每日签到 +10";
+  const checkinStatus = options.checkedIn ? "今日已签到" : "今日未签到";
 
   root.innerHTML = `
     <header class="side-header">
@@ -78,6 +84,24 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
       </div>
       <strong><span class="desktop-top">TOP 10</span><span class="mobile-top">TOP 3</span></strong>
     </header>
+    <section class="activity-entry" aria-labelledby="activity-entry-title">
+      <div class="activity-entry-head">
+        <div>
+          <span class="activity-entry-kicker">活动中心 / 01</span>
+          <strong id="activity-entry-title">幸运扭蛋机</strong>
+        </div>
+        <em>${lotteryStatus}</em>
+      </div>
+      <p>消费每满 ${money(lottery.threshold)}，解锁 1 次扭蛋</p>
+      <div class="activity-entry-bottom">
+        <div class="activity-entry-progress">
+          <strong>${money(lottery.paidAmount)} / ${money(lottery.threshold)}</strong>
+          <span><i style="width:${lotteryProgress.toFixed(2)}%"></i></span>
+        </div>
+        <strong class="activity-entry-count">${lottery.availableDraws}<small>次</small></strong>
+        <button class="lottery-open-button" type="button">${lotteryAction}</button>
+      </div>
+    </section>
     <ol class="ranking">
       ${hasRanking
         ? options.players
@@ -99,25 +123,18 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
             <span>有人开工后将自动上榜</span>
           </li>`}
     </ol>
+    <section class="personal-card" aria-label="个人活动">
+      <div class="personal-head"><span>个人活动</span><em>${checkinStatus}</em></div>
+      <div class="personal-main">
+        <div class="personal-points"><small>我的积分</small><strong>${personalPoints}</strong><label>PTS</label></div>
+        <button class="checkin-button" type="button" ${options.checkedIn ? "disabled" : ""}>${checkinAction}</button>
+      </div>
+    </section>
     <section class="self-card">
       <span>我的排名</span>
       <strong>${escapeHtml(current?.name ?? "尚未识别当前用户")}</strong>
       <span>${escapeHtml(currentPosition)}${deltaMarkup(current?.rankDelta)}</span>
       <span>${current ? `${formatTokens(current.tokens)} token${current.tokenDelta ? ` · ${current.tokenDelta > 0 ? "+" : ""}${formatTokens(current.tokenDelta)}` : ""}` : `请先登录 ${escapeHtml(boardSource)}`} · 全榜 ${formatTokens((options.totalTokens ?? 0) / 10000)} token</span>
-      <div class="lottery-teaser">
-        <div class="lottery-teaser-head">
-          <span>幸运扭蛋机</span>
-          <em>${lotteryStatus}</em>
-        </div>
-        <div class="lottery-teaser-main">
-          <div class="lottery-teaser-progress">
-            <strong>消费 ${money(lottery.paidAmount)} / ${money(lottery.threshold)}</strong>
-            <span class="lottery-teaser-track"><i style="width: ${lotteryProgress.toFixed(2)}%"></i></span>
-          </div>
-          <strong class="lottery-teaser-count">${lottery.availableDraws}<small>次</small></strong>
-          <button class="lottery-open-button" type="button">${lotteryAction}</button>
-        </div>
-      </div>
     </section>
   `;
 
@@ -129,6 +146,7 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
     });
   });
   root.querySelector<HTMLButtonElement>(".lottery-open-button")?.addEventListener("click", () => options.onLotteryOpen?.());
+  root.querySelector<HTMLButtonElement>(".checkin-button")?.addEventListener("click", () => options.onCheckin?.());
 }
 
 function money(value: number): string {

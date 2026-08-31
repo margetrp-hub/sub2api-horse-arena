@@ -7,23 +7,28 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
-    --gold: #ffe086;
-    --green: #63e990;
-    --cyan: #7fe3ff;
-    --panel: rgba(12, 16, 26, 0.92);
-    --line: #2a3a52;
-    --ink: #eaf2ff;
+    --gold: #ffd166;
+    --green: #4ee4c1;
+    --cyan: #55a7ff;
+    --panel: #15112d;
+    --panel-raised: #20194a;
+    --line: #5b4d91;
+    --ink: #fff4dc;
+    --pink: #ff5d7d;
   }
   html, body {
     height: 100%;
-    background: #060912;
+    background: #0c0920;
     color: var(--ink);
-    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-family: "Courier New", "PingFang SC", "Microsoft YaHei", monospace;
     overflow: hidden;
   }
   #stage {
     position: relative; width: 100vw; height: 100vh;
     display: flex; align-items: center; justify-content: center; padding: 10px;
+    background-color: #0c0920;
+    background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 18px 18px;
   }
   #shell {
     width: 100%; height: 100%; display: grid;
@@ -40,9 +45,11 @@
   }
   #sidePanel {
     width: 100%; height: min(calc(100vh - 20px), 960px);
-    min-width: 0; display: flex; flex-direction: column; gap: 10px;
-    padding: 10px; background: #090d16; border: 2px solid #2a3a52;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    min-width: 0; display: flex; flex-direction: column; gap: 8px;
+    padding: 10px; background: var(--panel); border: 3px solid #8976c2;
+    box-shadow: inset 0 0 0 2px var(--gold), 8px 8px 0 #080617;
+    background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 12px 12px;
   }
   canvas#scene {
     position: absolute; inset: 0; width: 100%; height: 100%;
@@ -54,10 +61,11 @@
   /* 顶部状态条 */
   #topbar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .stat {
-    background: var(--panel); border: 2px solid var(--line);
-    border-radius: 6px; padding: 7px 5px; text-align: center; min-width: 0;
+    background: var(--panel-raised); border: 2px solid var(--line);
+    border-radius: 0; padding: 7px 5px; text-align: center; min-width: 0;
+    box-shadow: 3px 3px 0 #080617;
   }
-  .stat .k { font-size: 11px; color: #8fa6c4; letter-spacing: 1px; }
+  .stat .k { font-size: 11px; color: #b9b1e6; letter-spacing: 1px; }
   .stat .v { font-size: 20px; font-weight: 700; color: var(--gold); margin-top: 2px;
              font-variant-numeric: tabular-nums; }
   .stat .v.small { font-size: 15px; color: var(--cyan); }
@@ -65,12 +73,13 @@
   /* 实时榜单 */
   #rankPanel {
     width: 100%; min-height: 0; flex: 1; overflow: hidden;
-    background: var(--panel); border: 2px solid var(--line);
-    border-radius: 6px; padding: 10px 10px 12px;
+    background: var(--panel-raised); border: 3px solid var(--line);
+    border-radius: 0; padding: 10px 10px 12px; box-shadow: 4px 4px 0 #080617;
+    display: flex; flex-direction: column;
   }
   #rankPanel h3 {
     font-size: 14px; color: var(--gold); letter-spacing: 2px;
-    margin-bottom: 8px; border-bottom: 1px dashed var(--line); padding-bottom: 6px;
+    margin-bottom: 8px; border-bottom: 2px dashed #8976c2; padding-bottom: 6px;
     display: flex; justify-content: space-between; align-items: center;
   }
   #rankPanel h3 .live { font-size: 10px; color: var(--green); display: flex; align-items: center; gap: 5px; letter-spacing: 1px; }
@@ -80,28 +89,47 @@
   #rankPanel h3 .live.stale { color: #ff9e6d; }
   #rankPanel h3 .live.stale .dot { background: #ff9e6d; animation-duration: 2.4s; }
   @keyframes blink { 50% { opacity: 0.25; } }
-  #rankList { position: relative; min-height: 0; overflow-y: auto; scrollbar-color: #425674 #0a1018; }
+  #rankList { position: relative; min-height: 0; flex: 1; overflow-y: auto; scrollbar-color: #8976c2 #15112d; }
   .rrow {
     display: flex; align-items: center; gap: 8px; font-size: 12px;
-    padding: 6px 6px; border-radius: 6px; cursor: pointer;
-    background: rgba(255,255,255,0.02); margin-bottom: 4px;
-    transition: background 0.2s, box-shadow 0.2s; will-change: transform;
+    padding: 6px; border-radius: 0; cursor: pointer;
+    background: #2a2157; border: 1px solid #5b4d91; margin-bottom: 5px;
+    box-shadow: 2px 2px 0 #080617;
+    transition: background 0.12s, box-shadow 0.12s, transform 0.12s; will-change: transform;
   }
-  .rrow.hot { background: rgba(127,227,255,0.16); box-shadow: inset 0 0 0 1px rgba(127,227,255,0.5); }
-  .rrow .rk { width: 22px; text-align: center; font-weight: 800; color: #8fa6c4; }
+  .rrow:hover { transform: translate(-2px, -2px); background: #362a6d; border-color: var(--green); box-shadow: 4px 4px 0 #080617; }
+  .rrow.hot { background: #30265f; border-color: var(--cyan); box-shadow: 3px 3px 0 #080617; }
+  .rrow .rk { width: 22px; text-align: center; font-weight: 800; color: #b9b1e6; }
   .rrow.top .rk { color: var(--gold); }
-  .rrow .av { width: 20px; height: 20px; border-radius: 4px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4); }
+  .rrow:nth-child(2) .rk { color: #d8d5ff; }
+  .rrow:nth-child(3) .rk { color: var(--pink); }
+  .rrow .av { width: 20px; height: 20px; border-radius: 0; flex: none; border: 2px solid var(--ink); box-shadow: 2px 2px 0 #080617; }
   .rrow .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rrow .tk { color: var(--gold); font-variant-numeric: tabular-nums; font-weight: 700; }
   .rrow .fire { font-size: 11px; opacity: 0; transition: opacity 0.2s; }
   .rrow.burst .fire { opacity: 1; }
 
+  .personal-card {
+    flex: none; margin-top: 9px; padding: 8px; background: #15112d;
+    border: 2px solid #8976c2; box-shadow: 3px 3px 0 #080617;
+  }
+  .personal-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .personal-head span { color: var(--green); font-size: 9px; letter-spacing: 1px; }
+  .personal-head em { color: var(--gold); font-size: 9px; font-style: normal; }
+  .personal-main { display: flex; align-items: end; justify-content: space-between; gap: 8px; margin-top: 6px; }
+  .personal-points small { display: block; color: #b9b1e6; font-size: 9px; }
+  .personal-points strong { color: var(--gold); font-size: 23px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .personal-points label { margin-left: 3px; color: var(--green); font-size: 9px; }
+  .checkin-button { min-height: 28px; padding: 5px 8px; color: #0c0920; background: var(--pink); border: 2px solid #ffdbe3; border-radius: 0; box-shadow: 3px 3px 0 #080617; font: 900 10px "Courier New", monospace; cursor: pointer; }
+  .checkin-button:hover { background: var(--gold); transform: translate(-1px, -1px); }
+  .checkin-button:disabled { color: #d8d5ff; background: #5b4d91; border-color: #8976c2; cursor: default; transform: none; }
+
   /* 悬停提示 */
   #tip {
     position: absolute; z-index: 30; pointer-events: none; display: none;
-    background: rgba(8,12,20,0.97); border: 1px solid var(--cyan);
-    border-radius: 8px; padding: 8px 10px; font-size: 11px; min-width: 156px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    background: #15112d; border: 2px solid var(--cyan);
+    border-radius: 0; padding: 8px 10px; font-size: 11px; min-width: 156px;
+    box-shadow: 4px 4px 0 #080617;
   }
   #tip .t { color: var(--gold); font-weight: 700; font-size: 12px; margin-bottom: 5px; }
   #tip .l { display: flex; justify-content: space-between; gap: 14px; color: #b9c8de; line-height: 1.6; }
@@ -115,17 +143,17 @@
   #modal.show { display: flex; }
   .card {
     width: 66%; max-width: 540px;
-    background: linear-gradient(#101828, #0a1018);
-    border: 2px solid var(--cyan); border-radius: 16px; padding: 22px 24px;
-    box-shadow: 0 0 40px rgba(127,227,255,0.3);
+    background: var(--panel-raised);
+    border: 3px solid var(--cyan); border-radius: 0; padding: 22px 24px;
+    box-shadow: 8px 8px 0 #080617;
   }
   .card .hd { display: flex; align-items: center; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 12px; margin-bottom: 14px; }
-  .card .hd .sw { width: 40px; height: 40px; border-radius: 8px; flex: none; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.4); }
+  .card .hd .sw { width: 40px; height: 40px; border-radius: 0; flex: none; box-shadow: 3px 3px 0 #080617; }
   .card .hd .nm { font-size: 18px; font-weight: 800; color: var(--gold); }
   .card .hd .sub { font-size: 11px; color: #8fa6c4; margin-top: 3px; }
   .card .hd .rkbig { margin-left: auto; font-size: 30px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  .kv { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .kv { background: #2a2157; border: 1px solid var(--line); border-radius: 0; padding: 8px 10px; }
   .kv .k { font-size: 10px; color: #8fa6c4; letter-spacing: 1px; }
   .kv .v { font-size: 16px; font-weight: 700; color: var(--cyan); margin-top: 3px; font-variant-numeric: tabular-nums; }
   .spark { margin-top: 14px; }
@@ -133,23 +161,23 @@
   .bars { display: flex; align-items: flex-end; gap: 6px; height: 58px; }
   .bars .b { flex: 1; background: linear-gradient(var(--cyan), #2d6d8a); border-radius: 3px 3px 0 0; min-height: 4px; }
   .bars .b.last { background: linear-gradient(var(--gold), #b8862e); }
-  .close { margin-top: 16px; width: 100%; background: linear-gradient(var(--cyan), #2d8ab0); color: #04121a; border: none; border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .close { margin-top: 16px; width: 100%; background: var(--green); color: #0c0920; border: 2px solid #d8fff3; border-radius: 0; padding: 11px; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 4px 4px 0 #080617; }
   .close:hover { filter: brightness(1.08); }
 
   /* 加载 */
   #loading {
-    position: absolute; inset: 0; z-index: 60; background: #060912;
+    position: absolute; inset: 0; z-index: 60; background: #0c0920;
     display: flex; align-items: center; justify-content: center;
     flex-direction: column; gap: 14px; color: var(--gold);
   }
   #loading .lg { font-size: 26px; font-weight: 800; letter-spacing: 3px; }
-  #loading .bar { width: 220px; height: 10px; background: #101828; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  #loading .bar { width: 220px; height: 10px; background: #15112d; border: 2px solid var(--line); border-radius: 0; overflow: hidden; box-shadow: 3px 3px 0 #080617; }
   #loading .fill { height: 100%; width: 0; background: var(--gold); transition: width 0.2s; }
   #loading .tip2 { font-size: 12px; color: #8fa6c4; }
 
   @media (max-width: 900px) {
     #shell {
-      height: auto; grid-template-columns: 1fr; grid-template-rows: auto 220px;
+      height: auto; grid-template-columns: 1fr; grid-template-rows: auto 270px;
       align-content: center; gap: 8px;
     }
     #frame {
@@ -157,18 +185,62 @@
       max-height: calc(100vh - 248px); justify-self: center;
     }
     #sidePanel {
-      width: 100%; height: 220px; display: grid;
-      grid-template-columns: 110px minmax(0, 1fr); gap: 6px; padding: 6px;
+      width: 100%; height: 270px; display: grid;
+      grid-template-columns: minmax(150px, .75fr) minmax(0, 1.25fr);
+      grid-template-rows: auto 1fr; gap: 6px; padding: 6px;
     }
-    #topbar { grid-template-columns: 1fr; gap: 4px; }
+    #topbar { grid-column: 1; grid-row: 1; grid-template-columns: 1fr; gap: 4px; }
     .stat { padding: 4px 3px; }
     .stat .k { font-size: 8px; }
     .stat .v, .stat .v.small { font-size: 12px; }
-    #rankPanel { height: 100%; padding: 6px; }
+    #rankPanel { grid-column: 2; grid-row: 1 / span 2; height: 100%; padding: 6px; }
     #rankPanel h3 { margin-bottom: 4px; padding-bottom: 4px; font-size: 11px; }
     .rrow { gap: 5px; padding: 3px; margin-bottom: 2px; font-size: 9px; }
     .rrow .av { width: 14px; height: 14px; }
     .rrow .rk { width: 18px; }
+    .personal-card { margin-top: 5px; padding: 5px; }
+    .personal-main { gap: 4px; margin-top: 3px; }
+    .personal-points strong { font-size: 16px; }
+    .checkin-button { min-height: 24px; padding: 3px 5px; font-size: 8px; }
+  }
+
+  /* 活动中心入口：与榜单共用像素边框，入口始终位于右侧顶部 */
+  .activity-entry {
+    position: relative; flex: none; min-width: 0; padding: 9px 9px 10px;
+    background: #2a2157; border: 3px solid #8976c2; box-shadow: 4px 4px 0 #080617;
+    overflow: hidden;
+  }
+  .activity-entry::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: var(--pink); }
+  .activity-entry-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding-top: 2px; }
+  .activity-entry-kicker { display: block; color: var(--green); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+  .activity-entry-head strong { display: block; margin-top: 2px; color: var(--gold); font-size: 15px; letter-spacing: 1px; }
+  .activity-entry-head em { padding: 3px 5px; color: #0c0920; background: var(--green); border: 1px solid #d8fff3; font-size: 9px; font-style: normal; font-weight: 900; letter-spacing: 1px; }
+  .activity-entry p { margin-top: 5px; color: #d8d5ff; font-size: 10px; line-height: 1.45; }
+  .activity-entry-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; align-items: end; margin-top: 8px; }
+  .activity-entry-progress { min-width: 0; }
+  .activity-entry-progress strong { display: block; color: var(--ink); font-size: 10px; font-variant-numeric: tabular-nums; }
+  .activity-entry-progress span { display: block; height: 7px; margin-top: 4px; background: #15112d; border: 1px solid #8976c2; }
+  .activity-entry-progress i { display: block; height: 100%; background: var(--gold); }
+  .activity-entry-count { color: var(--gold); font-size: 21px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .activity-entry-count small { margin-left: 2px; color: var(--ink); font-size: 9px; }
+  .lottery-open-button { grid-column: 1 / -1; min-height: 32px; padding: 6px 8px; color: #0c0920; background: var(--green); border: 2px solid #d8fff3; border-radius: 0; box-shadow: 3px 3px 0 #080617; font: 900 12px "Courier New", monospace; cursor: pointer; }
+  .lottery-open-button:hover { background: var(--gold); transform: translate(-1px, -1px); }
+  .lottery-open-button:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
+  @media (max-width: 900px) {
+    .activity-entry { grid-column: 1; grid-row: 2; min-height: 0; padding: 6px; }
+    .activity-entry-head strong { font-size: 12px; }
+    .activity-entry p { font-size: 8px; }
+    .activity-entry-bottom { gap: 4px; margin-top: 4px; }
+    .activity-entry-count { font-size: 17px; }
+    .lottery-open-button { min-height: 26px; padding: 4px; font-size: 9px; }
+  }
+  @media (max-width: 760px) {
+    #shell { grid-template-rows: auto 360px; }
+    #sidePanel { height: 360px; grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, 1fr); }
+    #topbar { grid-column: 1; grid-row: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .activity-entry { grid-column: 1; grid-row: 2; }
+    #rankPanel { grid-column: 1; grid-row: 3; }
+    .personal-head span, .personal-head em, .personal-points small { font-size: 8px; }
   }
 </style>
 </head>
@@ -196,9 +268,35 @@
       <div class="stat"><div class="k">刷新时间</div><div class="v small" id="stClock">--:--:--</div></div>
       </div>
 
+      <section class="activity-entry" aria-labelledby="activityEntryTitle">
+        <div class="activity-entry-head">
+          <div>
+            <span class="activity-entry-kicker">活动中心 / 01</span>
+            <strong id="activityEntryTitle">幸运扭蛋机</strong>
+          </div>
+          <em>READY</em>
+        </div>
+        <p>消费每满 ¥50，解锁 1 次扭蛋</p>
+        <div class="activity-entry-bottom">
+          <div class="activity-entry-progress">
+            <strong>¥36.40 / ¥50.00</strong>
+            <span><i style="width:72.8%"></i></span>
+          </div>
+          <strong class="activity-entry-count">2<small>次</small></strong>
+          <button id="lotteryOpenButton" class="lottery-open-button" type="button">进入扭蛋机</button>
+        </div>
+      </section>
+
       <div id="rankPanel">
         <h3><span>Token 消耗榜</span><span class="live"><span class="dot"></span><span id="liveLabel">LIVE</span></span></h3>
         <div id="rankList"></div>
+        <section class="personal-card" aria-label="个人活动">
+          <div class="personal-head"><span>个人活动</span><em id="checkinStatus">今日未签到</em></div>
+          <div class="personal-main">
+            <div class="personal-points"><small>我的积分</small><strong id="personalPoints">1280</strong><label>PTS</label></div>
+            <button id="checkinButton" class="checkin-button" type="button">每日签到 +10</button>
+          </div>
+        </section>
       </div>
     </aside>
   </div>
@@ -223,6 +321,58 @@ const QUERY_API_BASE = new URLSearchParams(window.location.search).get("api");
 const GAME_API_BASE = String(QUERY_API_BASE || RUNTIME_CONFIG.apiBase || "").replace(/\/$/, "");
 const GAME_API_POLL_MS = Math.max(10000, Number(RUNTIME_CONFIG.pollMs) || 30000);
 const CANVAS_W = 1536, CANVAS_H = 1152;
+
+const lotteryOpenButton = document.getElementById("lotteryOpenButton");
+if (lotteryOpenButton) {
+  lotteryOpenButton.addEventListener("click", () => {
+    const target = new URL("lottery.html", window.location.href);
+    if (new URLSearchParams(window.location.search).get("lotteryPreview") === "1") {
+      target.searchParams.set("lotteryPreview", "1");
+    }
+    window.location.assign(target.toString());
+  });
+}
+
+const PERSONAL_ACTIVITY_KEY = "oh-haolema:personal-activity";
+const personalActivity = (() => {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(PERSONAL_ACTIVITY_KEY) || "{}");
+    return {
+      points: Number.isFinite(Number(saved.points)) ? Math.max(0, Number(saved.points)) : 1280,
+      checkedDate: typeof saved.checkedDate === "string" ? saved.checkedDate : "",
+    };
+  } catch {
+    return { points: 1280, checkedDate: "" };
+  }
+})();
+function localDayStamp() {
+  const d = new Date();
+  return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
+}
+function savePersonalActivity() {
+  try { window.localStorage.setItem(PERSONAL_ACTIVITY_KEY, JSON.stringify(personalActivity)); } catch { /* 浏览器禁用存储时仍保留本次状态 */ }
+}
+function renderPersonalActivity() {
+  const checked = personalActivity.checkedDate === localDayStamp();
+  const points = document.getElementById("personalPoints");
+  const status = document.getElementById("checkinStatus");
+  const button = document.getElementById("checkinButton");
+  if (points) points.textContent = String(personalActivity.points);
+  if (status) status.textContent = checked ? "今日已签到" : "今日未签到";
+  if (button) {
+    button.disabled = checked;
+    button.textContent = checked ? "已签到 +10" : "每日签到 +10";
+  }
+}
+document.getElementById("checkinButton")?.addEventListener("click", () => {
+  if (personalActivity.checkedDate === localDayStamp()) return;
+  personalActivity.points += 10;
+  personalActivity.checkedDate = localDayStamp();
+  savePersonalActivity();
+  renderPersonalActivity();
+  chime();
+});
+renderPersonalActivity();
 
 const FRAME_ORDER = [0, 4, 1, 5, 2, 6, 3, 7, 3, 6, 2, 5, 1, 4];
 
