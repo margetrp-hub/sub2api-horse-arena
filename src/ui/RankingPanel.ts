@@ -75,6 +75,16 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
   const personalPoints = Math.max(0, Math.floor(options.personalPoints ?? 1280));
   const checkinAction = options.checkedIn ? "已签到 +10" : "每日签到 +10";
   const checkinStatus = options.checkedIn ? "今日已签到" : "今日未签到";
+  const topTenFloor = options.players.find((player) => player.rank === 10) ?? options.players[options.players.length - 1];
+  const personalGap = current && !current.inTop && topTenFloor
+    ? Math.max(0, topTenFloor.tokens - current.tokens)
+    : 0;
+  const personalRankLabel = !current ? "未登录" : current.inTop && current.rank ? `第 ${current.rank} 名` : "未上榜";
+  const personalRankDetail = !current
+    ? "登录后显示个人排名"
+    : current.inTop
+      ? "已进入 TOP10"
+      : `距 TOP10 ${formatTokens(personalGap)} Token`;
 
   root.innerHTML = `
     <header class="side-header">
@@ -124,6 +134,10 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
           </li>`}
     </ol>
     <section class="personal-card" aria-label="个人活动">
+      <div class="personal-rank-line">
+        <div><small>近 7 日个人排名</small><strong>${personalRankLabel}</strong></div>
+        <em>${personalRankDetail}</em>
+      </div>
       <div class="personal-head"><span>个人活动</span><em>${checkinStatus}</em></div>
       <div class="personal-main">
         <div class="personal-points"><small>我的积分</small><strong>${personalPoints}</strong><label>PTS</label></div>

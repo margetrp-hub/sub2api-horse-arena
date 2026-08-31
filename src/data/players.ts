@@ -14,7 +14,8 @@ export const players: Player[] = [
 ];
 
 export function formatTokens(value: number): string {
-  return `${value.toFixed(1)}万`;
+  const tokens = Math.max(0, Number(value) || 0) * 10000;
+  return tokens === 0 ? "0" : tokens.toExponential(2);
 }
 
 export function selfPlayer(): Player {

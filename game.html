@@ -32,19 +32,20 @@
   }
   #shell {
     width: 100%; height: 100%; display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(300px, 22vw, 360px);
+    grid-template-columns: clamp(300px, 22vw, 360px) minmax(0, 1fr);
     gap: 10px; align-items: center;
   }
   #frame {
     position: relative;
     width: 100%; max-width: calc((100vh - 20px) * 4 / 3);
     max-height: calc(100vh - 20px); aspect-ratio: 4 / 3;
-    justify-self: end;
+    grid-column: 2; grid-row: 1; justify-self: start;
     box-shadow: 0 0 0 2px #000, 0 20px 60px rgba(0,0,0,0.7);
     overflow: hidden;
   }
   #sidePanel {
     width: 100%; height: min(calc(100vh - 20px), 960px);
+    grid-column: 1; grid-row: 1;
     min-width: 0; display: flex; flex-direction: column; gap: 8px;
     padding: 10px; background: var(--panel); border: 3px solid #8976c2;
     box-shadow: inset 0 0 0 2px var(--gold), 8px 8px 0 #080617;
@@ -113,6 +114,10 @@
     flex: none; margin-top: 9px; padding: 8px; background: #15112d;
     border: 2px solid #8976c2; box-shadow: 3px 3px 0 #080617;
   }
+  .personal-rank-line { display: flex; align-items: end; justify-content: space-between; gap: 8px; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px dashed #5b4d91; }
+  .personal-rank-line small { display: block; color: #b9b1e6; font-size: 9px; }
+  .personal-rank-line strong { display: block; margin-top: 2px; color: var(--gold); font-size: 17px; line-height: 1; }
+  .personal-rank-line em { max-width: 52%; color: var(--green); font-size: 9px; font-style: normal; text-align: right; }
   .personal-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
   .personal-head span { color: var(--green); font-size: 9px; letter-spacing: 1px; }
   .personal-head em { color: var(--gold); font-size: 9px; font-style: normal; }
@@ -182,10 +187,11 @@
     }
     #frame {
       width: min(100%, calc((100vh - 248px) * 4 / 3));
-      max-height: calc(100vh - 248px); justify-self: center;
+      max-height: calc(100vh - 248px); grid-column: 1; grid-row: 1; justify-self: center;
     }
     #sidePanel {
       width: 100%; height: 270px; display: grid;
+      grid-column: 1; grid-row: 2;
       grid-template-columns: minmax(150px, .75fr) minmax(0, 1.25fr);
       grid-template-rows: auto 1fr; gap: 6px; padding: 6px;
     }
@@ -199,6 +205,9 @@
     .rrow .av { width: 14px; height: 14px; }
     .rrow .rk { width: 18px; }
     .personal-card { margin-top: 5px; padding: 5px; }
+    .personal-rank-line { padding-bottom: 4px; margin-bottom: 4px; }
+    .personal-rank-line small, .personal-rank-line em { font-size: 8px; }
+    .personal-rank-line strong { font-size: 13px; }
     .personal-main { gap: 4px; margin-top: 3px; }
     .personal-points strong { font-size: 16px; }
     .checkin-button { min-height: 24px; padding: 3px 5px; font-size: 8px; }
@@ -263,7 +272,7 @@
 
     <aside id="sidePanel">
       <div id="topbar">
-      <div class="stat"><div class="k">今日总消耗</div><div class="v" id="stTotal">0</div></div>
+      <div class="stat"><div class="k">近 7 日总消耗</div><div class="v" id="stTotal">0</div></div>
       <div class="stat"><div class="k">在刷机器</div><div class="v small" id="stActive">0 / 10</div></div>
       <div class="stat"><div class="k">刷新时间</div><div class="v small" id="stClock">--:--:--</div></div>
       </div>
@@ -288,9 +297,13 @@
       </section>
 
       <div id="rankPanel">
-        <h3><span>Token 消耗榜</span><span class="live"><span class="dot"></span><span id="liveLabel">LIVE</span></span></h3>
+        <h3><span>近 7 日 Token 消耗榜</span><span class="live"><span class="dot"></span><span id="liveLabel">LIVE</span></span></h3>
         <div id="rankList"></div>
         <section class="personal-card" aria-label="个人活动">
+          <div class="personal-rank-line">
+            <div><small>近 7 日个人排名</small><strong id="personalRankValue">未上榜</strong></div>
+            <em id="personalRankGap">距 TOP10 --</em>
+          </div>
           <div class="personal-head"><span>个人活动</span><em id="checkinStatus">今日未签到</em></div>
           <div class="personal-main">
             <div class="personal-points"><small>我的积分</small><strong id="personalPoints">1280</strong><label>PTS</label></div>
@@ -372,7 +385,6 @@ document.getElementById("checkinButton")?.addEventListener("click", () => {
   renderPersonalActivity();
   chime();
 });
-renderPersonalActivity();
 
 const FRAME_ORDER = [0, 4, 1, 5, 2, 6, 3, 7, 3, 6, 2, 5, 1, 4];
 
@@ -468,6 +480,7 @@ const state = {
   summaryTotal: null,
   summaryActive: null,
   lastSync: null,
+  personal: { rank: null, tokens: 720 },
 };
 
 const LIVE_COLORS = USERS.map((user) => user.color);
@@ -558,6 +571,14 @@ function applyLiveRanking(data) {
   state.dataSource = "live";
   state.summaryTotal = Math.max(0, safeNumber(data.total_tokens)) / 10000;
   state.summaryActive = Math.max(0, Math.min(10, Math.round(safeNumber(data.active_top_users))));
+  const current = data.current_user || data.currentUser;
+  if (current && typeof current === "object") {
+    const rank = Number(current.rank);
+    state.personal = {
+      rank: Number.isFinite(rank) && rank > 0 ? Math.trunc(rank) : null,
+      tokens: Math.max(0, safeNumber(current.tokens)) / 10000,
+    };
+  }
   state.lastSync = data.generated_at || new Date().toISOString();
   state.hover = -1;
   state.selected = -1;
@@ -568,7 +589,7 @@ function rankingEndpoint() {
   if (!GAME_API_BASE && window.location.protocol === "file:") return "";
   const base = GAME_API_BASE || window.location.origin;
   const url = new URL("/api/ranking", base);
-  url.searchParams.set("period", "today");
+  url.searchParams.set("period", "week");
   url.searchParams.set("limit", "10");
   return url.toString();
 }
@@ -613,6 +634,26 @@ function bursting(u) { return performance.now() < u.burstUntil; }
 function effRate(u) { return u.rate * (bursting(u) ? 3.2 : 1); }
 function sortedUsers() { return [...state.users].sort((a, b) => b.tokens - a.tokens); }
 function rankOf(id) { return sortedUsers().findIndex((u) => u.id === id) + 1; }
+function renderPersonalRank() {
+  const rankValue = document.getElementById("personalRankValue");
+  const rankGap = document.getElementById("personalRankGap");
+  if (!rankValue || !rankGap) return;
+  const topUsers = sortedUsers().filter((user) => user.sourceId !== 0 || state.dataSource === "demo");
+  const threshold = topUsers.length >= 10 ? topUsers[9].tokens : topUsers[topUsers.length - 1]?.tokens;
+  const rank = state.personal.rank;
+  if (Number.isFinite(rank) && rank > 0 && rank <= 10) {
+    rankValue.textContent = "第 " + rank + " 名";
+    rankGap.textContent = "已进入 TOP10";
+    return;
+  }
+  rankValue.textContent = "未上榜";
+  if (threshold === undefined) {
+    rankGap.textContent = "距 TOP10 --";
+    return;
+  }
+  const gap = Math.max(0, threshold - state.personal.tokens);
+  rankGap.textContent = gap > 0 ? "距 TOP10 " + fmt(gap) + " Token" : "距 TOP10 0 Token";
+}
 
 // ===========================================================================
 // 布局：把每个用户放到工位上（权威参数换算到画布坐标）
@@ -1152,9 +1193,8 @@ function render(dt) {
 // HUD / 榜单
 // ===========================================================================
 function fmt(v) {
-  if (v >= 10000) return (v / 10000).toFixed(2) + "亿";
-  if (v >= 1) return v.toFixed(1) + "万";
-  return (v * 10000).toFixed(0);
+  const tokens = Math.max(0, safeNumber(v)) * 10000;
+  return tokens === 0 ? "0" : tokens.toExponential(2);
 }
 function fmtInt(n) { return n.toLocaleString("en-US"); }
 
@@ -1171,6 +1211,8 @@ function renderTopbar() {
   const pad = (n) => String(n).padStart(2, "0");
   document.getElementById("stClock").textContent =
     pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  renderPersonalActivity();
+  renderPersonalRank();
 }
 
 // 榜单：DOM 行按 id 复用，用 CSS transform 平滑换位（FLIP 思路的轻量版）
@@ -1235,7 +1277,7 @@ function showTipFor(id, clientX, clientY) {
     '<div class="l"><span>排名</span><b>#' + rk + '</b></div>' +
     '<div class="l"><span>模型</span><b>' + displayModel + '</b></div>' +
     '<div class="l"><span>累计 Token</span><b>' + fmt(u.tokens) + '</b></div>' +
-    '<div class="l"><span>当前速率</span><b>' + effRate(u).toFixed(1) + ' 万/秒</b></div>' +
+    '<div class="l"><span>当前速率</span><b>' + fmt(effRate(u)) + ' Token/s</b></div>' +
     (bursting(u) ? '<div class="l"><span>状态</span><b style="color:#ff9e6d">🔥 爆刷中</b></div>' : '');
   tip.style.display = "block";
   const frame = document.getElementById("frame").getBoundingClientRect();
@@ -1282,7 +1324,7 @@ function openDetail(id) {
       '<div class="kv"><div class="k">累计 TOKEN</div><div class="v">' + fmt(u.tokens) + '</div></div>' +
       '<div class="kv"><div class="k">今日消耗</div><div class="v">' + fmt(u.today) + '</div></div>' +
       '<div class="kv"><div class="k">总请求数</div><div class="v">' + fmtInt(u.reqs) + '</div></div>' +
-      '<div class="kv"><div class="k">当前速率</div><div class="v">' + effRate(u).toFixed(1) + '<span style="font-size:11px"> 万/s</span></div></div>' +
+      '<div class="kv"><div class="k">当前速率</div><div class="v">' + fmt(effRate(u)) + '<span style="font-size:11px"> Token/s</span></div></div>' +
       '<div class="kv"><div class="k">日均消耗</div><div class="v">' + fmt(u.tokens / u.days) + '</div></div>' +
       '<div class="kv"><div class="k">状态</div><div class="v" style="color:' + (bursting(u) ? "#ff9e6d" : "#63e990") + '">' + (bursting(u) ? "🔥 爆刷" : u.mode === "sleep" ? "💤 挂机" : "⌨️ 在刷") + '</div></div>' +
     '</div>' +
