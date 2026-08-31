@@ -6,6 +6,14 @@ type RankingPanelOptions = {
   players: Player[];
   selected: Player;
   onSelect: (player: Player) => void;
+  onLotteryOpen?: () => void;
+  lottery?: {
+    preview: boolean;
+    paidAmount: number;
+    threshold: number;
+    availableDraws: number;
+    starterDraws: number;
+  };
   currentUser?: CurrentUserStatus | null;
   source?: "loading" | "loaded" | "stale" | "unavailable";
   rankingSource?: RankingSource;
@@ -51,6 +59,16 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
       : current.inTop
         ? `近 7 日第 ${current.rank} 名 · 已进入 TOP 10`
         : `近 7 日第 ${current.rank} 名 · 未进入 TOP 10`;
+  const lottery = options.lottery ?? {
+    preview: false,
+    paidAmount: 0,
+    threshold: 50,
+    availableDraws: 0,
+    starterDraws: 0,
+  };
+  const lotteryProgress = Math.min(100, Math.max(0, (lottery.paidAmount / lottery.threshold) * 100));
+  const lotteryStatus = lottery.preview ? "本地设计预览" : "活动服务待接入";
+  const lotteryAction = lottery.preview ? "去扭蛋" : "查看设计";
 
   root.innerHTML = `
     <header class="side-header">
@@ -86,6 +104,20 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
       <strong>${escapeHtml(current?.name ?? "尚未识别当前用户")}</strong>
       <span>${escapeHtml(currentPosition)}${deltaMarkup(current?.rankDelta)}</span>
       <span>${current ? `${formatTokens(current.tokens)} token${current.tokenDelta ? ` · ${current.tokenDelta > 0 ? "+" : ""}${formatTokens(current.tokenDelta)}` : ""}` : `请先登录 ${escapeHtml(boardSource)}`} · 全榜 ${formatTokens((options.totalTokens ?? 0) / 10000)} token</span>
+      <div class="lottery-teaser">
+        <div class="lottery-teaser-head">
+          <span>幸运扭蛋机</span>
+          <em>${lotteryStatus}</em>
+        </div>
+        <div class="lottery-teaser-main">
+          <div class="lottery-teaser-progress">
+            <strong>消费 ${money(lottery.paidAmount)} / ${money(lottery.threshold)}</strong>
+            <span class="lottery-teaser-track"><i style="width: ${lotteryProgress.toFixed(2)}%"></i></span>
+          </div>
+          <strong class="lottery-teaser-count">${lottery.availableDraws}<small>次</small></strong>
+          <button class="lottery-open-button" type="button">${lotteryAction}</button>
+        </div>
+      </div>
     </section>
   `;
 
@@ -96,4 +128,9 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
       if (player) options.onSelect(player);
     });
   });
+  root.querySelector<HTMLButtonElement>(".lottery-open-button")?.addEventListener("click", () => options.onLotteryOpen?.());
+}
+
+function money(value: number): string {
+  return `¥${value.toFixed(2)}`;
 }

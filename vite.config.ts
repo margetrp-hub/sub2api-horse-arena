@@ -9,12 +9,16 @@ export default defineConfig(({ command }) => ({
         main: resolve(__dirname, "index.html"),
         game: resolve(__dirname, "game.html"),
         station: resolve(__dirname, "station.html"),
+        lottery: resolve(__dirname, "lottery.html"),
       },
     },
   },
   server: {
     host: "127.0.0.1",
     port: 5173,
+    proxy: {
+      "/api": "http://127.0.0.1:8788",
+    },
   },
   preview: {
     host: "127.0.0.1",

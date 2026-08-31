@@ -9,6 +9,7 @@ import {
   normalizeSub2ApiTrend,
   normalizePeriod,
 } from "./normalize.mjs";
+import { createLotteryService } from "./lottery.mjs";
 
 const DEFAULT_PORT = 8788;
 const DEFAULT_TIMEOUT_MS = 10000;
@@ -90,8 +91,11 @@ function applyCors(req, res, config) {
   if (config.corsOrigins.includes("*") || config.corsOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Accept,Authorization,Content-Type");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Accept,Authorization,Content-Type,Idempotency-Key,X-Lottery-Preview",
+    );
   }
 }
 
@@ -136,6 +140,22 @@ async function requestJson(url, headers, timeoutMs) {
     return payload;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+async function readJsonBody(req, maxBytes = 32 * 1024) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > maxBytes) throw Object.assign(new Error("request body too large"), { code: "payload_too_large", status: 413 });
+    chunks.push(chunk);
+  }
+  if (size === 0) return {};
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    throw Object.assign(new Error("request body must be valid JSON"), { code: "invalid_json", status: 400 });
   }
 }
 
@@ -332,8 +352,25 @@ export function createApp(
   config = getConfig(),
   fetchData = fetchUsageData,
   resolveUser = resolveCurrentUser,
+  lottery = createLotteryService(),
 ) {
   const getRanking = createRankingService(config, fetchData);
+
+  async function resolveLotteryUser(req, url) {
+    const isPreview = url.searchParams.get("preview") === "1"
+      && String(req.headers["x-lottery-preview"] || "") === "1";
+    if (isPreview) return { id: "preview-user", name: "预览用户" };
+    try {
+      return await resolveUser(
+        config,
+        req.headers.authorization,
+        req.headers.cookie,
+        req.headers["new-api-user"],
+      );
+    } catch {
+      return null;
+    }
+  }
 
   return async function handle(req, res) {
     applyCors(req, res, config);
@@ -352,6 +389,40 @@ export function createApp(
         source: config.source,
         configured,
       });
+      return;
+    }
+
+    if ((req.method === "GET" || req.method === "POST") && url.pathname.startsWith("/api/lottery/")) {
+      const user = await resolveLotteryUser(req, url);
+      if (!user) {
+        jsonResponse(res, 401, { success: false, code: "unauthorized", message: "lottery session required" });
+        return;
+      }
+      try {
+        if (req.method === "GET" && url.pathname === "/api/lottery/state") {
+          jsonResponse(res, 200, { success: true, data: lottery.getState(user.id) });
+          return;
+        }
+        if (req.method === "POST" && url.pathname === "/api/lottery/draw") {
+          const body = await readJsonBody(req);
+          const data = await lottery.draw({
+            userId: user.id,
+            count: body?.count,
+            idempotencyKey: req.headers["idempotency-key"],
+          });
+          jsonResponse(res, 200, { success: true, data });
+          return;
+        }
+        jsonResponse(res, 404, { success: false, code: "not_found" });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "lottery error";
+        const status = Number(error?.status) || 500;
+        jsonResponse(res, status, {
+          success: false,
+          code: error?.code || "lottery_error",
+          message,
+        });
+      }
       return;
     }
 

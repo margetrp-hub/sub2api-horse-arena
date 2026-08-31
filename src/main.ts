@@ -35,6 +35,14 @@ const panelRoot = sidePanel;
 const toastRoot = toastElement;
 
 const toast = new Toast(toastRoot);
+const lotteryPreview = new URLSearchParams(window.location.search).get("lotteryPreview") === "1";
+const lotteryState = {
+  preview: lotteryPreview,
+  paidAmount: lotteryPreview ? 36.4 : 0,
+  threshold: 50,
+  availableDraws: lotteryPreview ? 2 : 0,
+  starterDraws: lotteryPreview ? 2 : 0,
+};
 const idlePlayers = emptyPlayers();
 let selected = idlePlayers[0];
 let currentPlayers: Player[] = [];
@@ -62,6 +70,12 @@ function renderPanel(): void {
     players: currentPlayers,
     selected,
     onSelect: (player) => selectPlayer(player),
+    lottery: lotteryState,
+    onLotteryOpen: () => {
+      const lotteryUrl = new URL(`${import.meta.env.BASE_URL}lottery.html`, window.location.origin);
+      lotteryUrl.searchParams.set("lotteryPreview", lotteryPreview ? "1" : "0");
+      window.location.assign(lotteryUrl.toString());
+    },
     currentUser: rankingSnapshot?.currentUser,
     source: rankingState,
     totalTokens: rankingSnapshot?.totalTokens,

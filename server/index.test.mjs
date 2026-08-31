@@ -9,6 +9,7 @@ import {
   fetchUsageData,
   getConfig,
 } from "./index.mjs";
+import { createLotteryService } from "./lottery.mjs";
 
 test("ranking endpoint returns masked normalized data and caches upstream reads", async () => {
   let upstreamCalls = 0;
@@ -278,6 +279,73 @@ test("NewAPI ranking endpoint resolves the authenticated user's position", async
     assert.equal(body.data.users.length, 10);
     assert.equal(body.data.current_user.rank, 11);
     assert.equal(body.data.current_user.in_top, false);
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
+});
+
+test("lottery service locks the result and makes retries idempotent", async () => {
+  const lottery = createLotteryService({ random: () => 0.99999 });
+  const first = await lottery.draw({ userId: "user-1", count: 1, idempotencyKey: "draw-a" });
+  const retry = await lottery.draw({ userId: "user-1", count: 1, idempotencyKey: "draw-a" });
+
+  assert.equal(first.animation.key, "pixi-runtime");
+  assert.equal(first.results[0].id, "subscription-7");
+  assert.equal(first.remainingDraws, 1);
+  assert.deepEqual(retry, first);
+  await assert.rejects(
+    () => lottery.draw({ userId: "user-1", count: 5, idempotencyKey: "draw-b" }),
+    (error) => error.code === "insufficient_draws" && error.status === 409,
+  );
+});
+
+test("lottery service applies the server-side pity counter", async () => {
+  const lottery = createLotteryService({
+    random: () => 0,
+    initialState: { paidAmount: 0, threshold: 50, starterDraws: 0, remainingDraws: 1, missStreak: 3 },
+  });
+  const result = await lottery.draw({ userId: "user-2", count: 1, idempotencyKey: "draw-pity" });
+
+  assert.equal(result.results[0].id, "balance-1");
+  assert.equal(result.missStreak, 0);
+  assert.equal(result.results[0].grantStatus, "committed");
+});
+
+test("lottery routes expose server state and the Pixi runtime animation contract", async () => {
+  const lottery = createLotteryService({ random: () => 0.99999 });
+  const config = {
+    source: "newapi",
+    host: "127.0.0.1",
+    port: 0,
+    timeoutMs: 1000,
+    cacheMs: 1000,
+    timezoneOffsetMinutes: 480,
+    corsOrigins: ["http://127.0.0.1:5173"],
+  };
+  const app = createApp(config, async () => [], async () => null, lottery);
+  const server = http.createServer((req, res) => app(req, res));
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const headers = { Origin: "http://127.0.0.1:5173", "X-Lottery-Preview": "1" };
+
+  try {
+    const stateResponse = await fetch(`http://127.0.0.1:${address.port}/api/lottery/state?preview=1`, { headers });
+    const stateBody = await stateResponse.json();
+    assert.equal(stateResponse.status, 200);
+    assert.equal(stateBody.data.animation.key, "pixi-runtime");
+    assert.equal(stateBody.data.remainingDraws, 2);
+
+    const drawResponse = await fetch(`http://127.0.0.1:${address.port}/api/lottery/draw?preview=1`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json", "Idempotency-Key": "route-draw-1" },
+      body: JSON.stringify({ count: 1 }),
+    });
+    const drawBody = await drawResponse.json();
+    assert.equal(drawResponse.status, 200);
+    assert.equal(drawBody.data.animation.key, "pixi-runtime");
+    assert.equal(drawBody.data.threshold, 50);
+    assert.equal(drawBody.data.paidAmount, 36.4);
+    assert.equal(drawBody.data.remainingDraws, 1);
   } finally {
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   }

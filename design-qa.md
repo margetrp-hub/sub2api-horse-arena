@@ -43,3 +43,93 @@ No actionable P0, P1, or P2 findings remain.
 - P3: live token data still needs the production API response schema; current player values remain simulated.
 
 final result: passed
+
+## Activity Center Current Baseline
+
+- Current visual direction: pixel arcade / mosaic style with a large lottery machine stage and a compact activity rail.
+- Current animation implementation: Pixi runtime canvas in `src/lottery-machine-runtime.ts`; the old generated WebM path is no longer used by the page.
+- Current motion duration: approximately 6.2 seconds, covering press, machine agitation, capsule drop, tray settle, opening, and reward hold before the result modal.
+- Current responsive layout: the machine is the primary visual column; the activity rail is constrained to a narrower width and stacks below it on mobile.
+- Current verification: desktop and mobile screenshots checked after the pixel and layout passes; `npm run build` passes; lottery API regression suite passes 19/19.
+
+The earlier visual evidence sections in this file are retained as history. The runtime and layout statements above are authoritative for the current activity-center build.
+
+## Lucky Capsule Physical Feedback Pass
+
+- Verification idle: `D:\wiki\lab\repos\sub2api-horse-arena\output\playwright\lottery-press-idle-v3.png`
+- Verification rolling: `D:\wiki\lab\repos\sub2api-horse-arena\output\playwright\lottery-physical-rolling.png`
+- Verification dropped: `D:\wiki\lab\repos\sub2api-horse-arena\output\playwright\lottery-physical-dropped.png`
+- Verification mobile rolling: `D:\wiki\lab\repos\sub2api-horse-arena\output\playwright\lottery-physical-mobile-rolling-v2.png`
+- Viewports: desktop `1536x1024`; mobile `390x844`
+
+## Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- The machine artwork remains visual only; press feedback is rendered by a real HTML button with a metal bezel, depressed state, and disabled state.
+- Rolling feedback is layered as independent CSS motion: machine shake, moving ball swarm, outlet flash, and a separate capsule trajectory.
+- The primary rolling presentation is now a single generated `lottery-spin.webm` asset; CSS remains the fallback for browsers that cannot decode WebM.
+- The dropped capsule settles into a dedicated output tray before the result can be opened. The result card remains the explicit reveal step.
+- Browser evaluation confirms `scrollWidth === viewport` at both tested sizes and no horizontal overflow.
+
+## Functional Evidence
+
+- Desktop click path: `idle -> rolling -> dropped -> revealed`.
+- Rolling computed styles include `machineShake` and `swarmTilt`; the capsule element is visible while the output tray is active.
+- The dropped capsule bounding box is inside the machine stage tray region; opening the capsule renders the generated open-capsule asset and prize text.
+- Mobile click path keeps the button and output tray separated (`button.right < output.left`) and preserves `scrollWidth 390`.
+- `navigator.vibrate` is called when supported for a short tactile pulse on physical devices.
+
+## Patches Made Since Previous Pass
+
+- Replaced the transparent click hot-zone with a visible press button and metal control bezel.
+- Added CSS ball-swarm motion, outlet glow, output window, tray, capsule drop, and capsule settle animations.
+- Generated and wired `public/assets/lottery-spin.webm`; the prize stays hidden until the video's `ended` event.
+- Changed user-facing action copy from pulling a lever to pressing a button.
+- Added a mobile-only control offset so the button and output tray do not overlap.
+
+final result: passed
+
+## Lucky Capsule Page Design QA
+
+- Source visual truth: `D:\wiki\lab\repos\sub2api-horse-arena\output\imagegen\lottery-page-concept-v1.png`
+- Implementation idle screenshot: `D:\wiki\lab\repos\sub2api-horse-arena\output\playwright\lottery-page-final2-idle.png`
+- Implementation rolling screenshot: `D:\wiki\lab\repos\sub2api-horse-arena\output\playwright\lottery-page-final2-rolling.png`
+- Implementation revealed screenshot: `D:\wiki\lab\repos\sub2api-horse-arena\output\playwright\lottery-page-final2-revealed.png`
+- Full-view comparison: `D:\wiki\lab\repos\sub2api-horse-arena\output\playwright\lottery-design-qa-comparison-final.png`
+- Focused right-rail comparison: `D:\wiki\lab\repos\sub2api-horse-arena\output\playwright\lottery-design-qa-focus-final.png`
+- Viewports: desktop `1536x1024`; mobile `390x844`
+- State: idle, rolling, dropped, and revealed preview states; no real account or payment mutation
+
+## Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+- Fonts and typography: the reference hierarchy is preserved with a large split-color title, compact mono labels, and high-contrast metric values. Responsive text stays within its cards.
+- Spacing and layout rhythm: desktop uses a left hero stage and right information rail; mobile stacks the hero above the rail. Browser measurements report no horizontal overflow (`scrollWidth 390` at a `390px` viewport).
+- Colors and visual tokens: the generated warm arcade background is dimmed behind charcoal content, while warm ivory cards, coral actions, cyan counters, and brass accents match the reference direction.
+- Image quality and asset fidelity: the page uses separate raster assets for the machine, closed capsule, opened capsule, and ambient background. The open-capsule asset was cleaned to remove the generated checkerboard background before use.
+- Copy and content: the earning rule consistently says `消费` and `实际支付金额`; `充值加赠 5%` remains only as the name of its prize type.
+
+## Functional Evidence
+
+- Clicking the machine trigger sets the page to `rolling`, applies the visible `machineShake` animation, and shows a separate capsule asset with `capsuleDrop` animation.
+- After the drop, the page enters `dropped`, disables draw actions, and exposes `点击开盒`.
+- Clicking `点击开盒` enters `revealed`, hides the closed capsule, shows the generated opened-capsule image, and renders the selected prize.
+- The local preview decrements one available draw and leaves the real Sub2API account untouched.
+- `npm run build` passes and emits `dist/lottery.html`; API regression tests remain 16/16 passing.
+
+## Patches Made Since Previous QA Pass
+
+- Added the standalone `lottery.html` route and `src/lottery-main.ts` page controller.
+- Replaced the modal-first presentation with a full-screen independent lottery page.
+- Added generated raster assets: `lottery-machine-hero-v1.png`, `lottery-capsule-closed-v1.png`, `lottery-capsule-open-v1.png`, and `lottery-ambient-bg-v2.png`.
+- Added visible machine shake, capsule drop, dropped state, open-box transition, and result-card animation.
+- Corrected all progress copy from recharge to consumption and made asset paths follow `import.meta.env.BASE_URL` for `/game/` deployment.
+
+## Follow-up Polish
+
+- P3: replace preview state with the activity service contract for server-authoritative draw results, idempotent rewards, and persisted progress.
+- P3: add real prize icons or generated reward slips if the final operations team wants richer prize differentiation.
+
+final result: passed
