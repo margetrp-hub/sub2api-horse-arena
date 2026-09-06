@@ -229,6 +229,7 @@ export function createLotteryService({
   }
 
   return {
+    previewOnly: true,
     draw,
     exchangePoints,
     getState,

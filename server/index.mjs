@@ -10,6 +10,7 @@ import {
   normalizePeriod,
 } from "./normalize.mjs";
 import { createLotteryService } from "./lottery.mjs";
+import { createPointsLotteryService } from "./points-ledger.mjs";
 
 const DEFAULT_PORT = 8788;
 const DEFAULT_TIMEOUT_MS = 10000;
@@ -35,6 +36,10 @@ export function getConfig(env = process.env) {
     host: env.HOST || "127.0.0.1",
     port: envNumber("PORT", DEFAULT_PORT, env),
     source: normalizeSource(env.USAGE_SOURCE || env.DATA_SOURCE),
+    lotteryPreviewEnabled: env.LOTTERY_PREVIEW_ENABLED === "1",
+    pointsBaseUrl: String(env.ERDAI_POINTS_BASE_URL || "").trim(),
+    pointsReadToken: String(env.ERDAI_POINTS_READ_TOKEN || "").trim(),
+    pointsIdentityInstance: String(env.ERDAI_POINTS_IDENTITY_INSTANCE || "").trim(),
     baseUrl: trimTrailingSlash(env.NEWAPI_BASE_URL || "https://api.yhoo.lol"),
     accessToken: String(env.NEWAPI_ACCESS_TOKEN || "").trim(),
     userId: String(env.NEWAPI_USER_ID || "").trim(),
@@ -94,7 +99,7 @@ function applyCors(req, res, config) {
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
     res.setHeader(
       "Access-Control-Allow-Headers",
-      "Accept,Authorization,Content-Type,Idempotency-Key,X-Lottery-Preview",
+      "Accept,Authorization,Content-Type,Idempotency-Key,X-Lottery-Preview,New-Api-User",
     );
   }
 }
@@ -352,14 +357,17 @@ export function createApp(
   config = getConfig(),
   fetchData = fetchUsageData,
   resolveUser = resolveCurrentUser,
-  lottery = createLotteryService(),
+  lottery,
 ) {
   const getRanking = createRankingService(config, fetchData);
+  const previewLottery = lottery?.previewOnly ? lottery : createLotteryService();
+  const liveLottery = lottery && !lottery.previewOnly ? lottery : createPointsLotteryService(config);
 
   async function resolveLotteryUser(req, url) {
     const isPreview = url.searchParams.get("preview") === "1"
       && String(req.headers["x-lottery-preview"] || "") === "1";
-    if (isPreview) return { id: "preview-user", name: "预览用户" };
+    if (isPreview && config.lotteryPreviewEnabled === true) return { id: "preview-user", name: "预览用户", lotteryPreview: true };
+    if (isPreview) return null;
     try {
       return await resolveUser(
         config,
@@ -399,13 +407,14 @@ export function createApp(
         return;
       }
       try {
+        const service = user.lotteryPreview ? previewLottery : liveLottery;
         if (req.method === "GET" && url.pathname === "/api/lottery/state") {
-          jsonResponse(res, 200, { success: true, data: lottery.getState(user.id) });
+          jsonResponse(res, 200, { success: true, data: await service.getState(user.id) });
           return;
         }
         if (req.method === "POST" && url.pathname === "/api/lottery/draw") {
           const body = await readJsonBody(req);
-          const data = await lottery.draw({
+          const data = await service.draw({
             userId: user.id,
             count: body?.count,
             idempotencyKey: req.headers["idempotency-key"],
@@ -415,7 +424,7 @@ export function createApp(
         }
         if (req.method === "POST" && url.pathname === "/api/lottery/exchange") {
           const body = await readJsonBody(req);
-          const data = await lottery.exchangePoints({
+          const data = await service.exchangePoints({
             userId: user.id,
             count: body?.count,
           });

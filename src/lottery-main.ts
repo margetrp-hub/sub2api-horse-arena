@@ -1,5 +1,6 @@
 import "./lottery-page.css";
 import { LotteryMachineRuntime } from "./lottery-machine-runtime";
+import { browserSessionHeaders } from "./api/ranking";
 
 type PrizeKind = "empty" | "balance" | "coupon" | "subscription";
 
@@ -12,6 +13,8 @@ type Prize = {
 };
 
 type LotteryStateResponse = {
+  available?: boolean;
+  reason?: string;
   paidAmount: number;
   threshold: number;
   starterTokens: number;
@@ -51,8 +54,9 @@ const state = {
   remainingDraws: 0,
   starterTokens: 0,
   starterDraws: 0,
-  points: 1280,
-  tokenExchangeCost: 100,
+  points: preview ? 1280 : 0,
+  pointsLoaded: false,
+  tokenExchangeCost: preview ? 100 : 0,
   missStreak: 0,
   pendingResults: null as Prize[] | null,
   revealedResults: null as Prize[] | null,
@@ -119,7 +123,7 @@ function render(): void {
   const remaining = Math.max(0, state.threshold - state.paidAmount);
   const canDraw = state.apiReady && state.phase === "idle" && !state.pendingResults && state.lotteryTokens > 0;
   const canFiveDraw = canDraw && state.lotteryTokens >= 5;
-  const canExchange = state.apiReady && state.phase === "idle" && state.points >= state.tokenExchangeCost;
+  const canExchange = state.apiReady && state.phase === "idle" && state.tokenExchangeCost > 0 && state.points >= state.tokenExchangeCost;
   const machineStatus = state.phase === "loading"
     ? "连接活动服务"
     : state.phase === "requesting"
@@ -138,13 +142,13 @@ function render(): void {
   root.innerHTML = `
     <div class="lottery-page" data-phase="${state.phase}">
       <header class="lottery-topbar">
-        <a class="brand-lockup" href="${assetBase}game.html?lotteryPreview=1" aria-label="回到 OH! 薅乐马">
+        <a class="brand-lockup" href="${assetBase}game.html${preview ? '?lotteryPreview=1' : ''}" aria-label="回到 OH! 薅乐马">
           <span class="brand-mark">OH!</span>
           <span><strong>薅乐马</strong><small>AI 社区活动中心</small></span>
         </a>
         <div class="topbar-meta">
-          <span class="activity-pill"><i></i>长期活动</span>
-          <a class="back-link" href="${assetBase}game.html?lotteryPreview=1">回到薅乐马</a>
+          <span class="activity-pill"><i></i>${preview ? '活动预览' : '暂未开放'}</span>
+          <a class="back-link" href="${assetBase}game.html${preview ? '?lotteryPreview=1' : ''}">回到薅乐马</a>
         </div>
       </header>
 
@@ -152,13 +156,12 @@ function render(): void {
         <section class="lottery-hero" aria-labelledby="lottery-title">
           <div class="hero-copy">
             <span class="hero-eyebrow">OH! 薅乐马 · 消费回馈计划</span>
-            <p>每累计消费 ${money(state.threshold)}，获得 1 枚抽奖代币。<br>消费获得的代币长期有效。</p>
+            <p>${preview ? `每累计消费 ${money(state.threshold)}，获得 1 枚抽奖代币。<br>消费获得的代币长期有效。` : '抽奖与积分兑换暂未开放，奖品待公布。'}</p>
           </div>
           <div class="machine-stage" data-machine-status="${machineStatus}">
             <div class="machine-halo" aria-hidden="true"></div>
             <div class="lottery-runtime" data-can-draw="${canDraw ? "true" : "false"}"></div>
           </div>
-          <div class="hero-note"><span>按下实体按钮</span><span>动画结束后弹出结果</span></div>
         </section>
 
         <section class="lottery-rail" aria-label="抽奖信息">
@@ -167,22 +170,22 @@ function render(): void {
             <span class="preview-badge">${preview ? "服务端交互预览" : "活动服务"}</span>
           </div>
 
-          <section class="progress-card">
+          ${preview ? `<section class="progress-card">
             <div class="card-label">消费进度 <span>循环累计</span></div>
             <div class="progress-value"><strong>${money(state.paidAmount)}</strong><span>/ ${money(state.threshold)}</span></div>
             <div class="progress-track" aria-label="消费进度"><i style="width:${progress.toFixed(2)}%"></i></div>
             <div class="progress-meta"><span>${remaining > 0 ? `还差 ${money(remaining)}` : "下一枚代币已达成"}</span><span>按实际支付金额计算</span></div>
-          </section>
+          </section>` : ''}
 
           <section class="chance-card">
             <div><span class="card-label">可用抽奖代币</span><strong class="chance-number">${state.lotteryTokens}</strong></div>
-            <div class="chance-detail"><span>消费获得：${Math.max(0, state.lotteryTokens - state.starterTokens)} 枚</span><span>赠送代币：${state.starterTokens} 枚</span><small>赠送代币 30 天有效</small>${apiStatus}</div>
+            <div class="chance-detail">${preview ? `<span>消费获得：${Math.max(0, state.lotteryTokens - state.starterTokens)} 枚</span><span>赠送代币：${state.starterTokens} 枚</span><small>赠送代币 30 天有效</small>` : ''}${apiStatus}</div>
           </section>
 
           <section class="exchange-card">
-            <div class="exchange-head"><div><span class="card-label">积分兑换</span><strong class="points-number">${state.points}<small> PTS</small></strong></div><div class="exchange-rate"><b>${state.tokenExchangeCost}</b><span>积分</span><i>→</i><b>1</b><span>抽奖代币</span></div></div>
+            <div class="exchange-head"><div><span class="card-label">积分兑换</span><strong class="points-number">${state.pointsLoaded ? state.points : '--'}<small> PTS</small></strong></div>${state.tokenExchangeCost > 0 ? `<div class="exchange-rate"><b>${state.tokenExchangeCost}</b><span>积分</span><i>→</i><b>1</b><span>抽奖代币</span></div>` : ''}</div>
             <button class="exchange-button" type="button" data-exchange ${canExchange ? "" : "disabled"}>兑换 1 枚抽奖代币</button>
-            <small class="exchange-hint">消耗 ${state.tokenExchangeCost} 积分 · 当前可兑换 ${Math.floor(state.points / state.tokenExchangeCost)} 枚</small>
+            <small class="exchange-hint">${state.tokenExchangeCost > 0 ? `消耗 ${state.tokenExchangeCost} 积分 · 当前可兑换 ${Math.floor(state.points / state.tokenExchangeCost)} 枚` : '兑换暂未开放'}</small>
           </section>
 
           <section class="action-card">
@@ -190,7 +193,7 @@ function render(): void {
             <button class="draw-action secondary" type="button" data-draw="five" ${canFiveDraw ? "" : "disabled"}><span>五连抽</span><small>消耗 5 枚代币</small></button>
           </section>
 
-          <section class="prize-card">
+          ${preview ? `<section class="prize-card">
             <div class="card-label">本期奖池 <span>订阅奖励概率最低</span></div>
             <div class="prize-grid">
               <div class="prize-item"><i class="prize-art balance-art">¥</i><span>余额</span><strong>1 / 2 / 3 / 5 元</strong></div>
@@ -200,7 +203,7 @@ function render(): void {
             </div>
           </section>
 
-          <div class="rule-strip"><span>每 50 元 1 枚代币</span><span>连续 3 次未中奖，第 4 次保底普通奖</span></div>
+          <div class="rule-strip"><span>每 50 元 1 枚代币</span><span>连续 3 次未中奖，第 4 次保底普通奖</span></div>` : '<div class="rule-strip"><span>奖品待公布</span></div>'}
         </section>
       </main>
       ${renderResultModal()}
@@ -326,23 +329,24 @@ function dismissResult(): void {
 }
 
 async function loadLotteryState(): Promise<void> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = preview ? {} : browserSessionHeaders();
   if (preview) headers["X-Lottery-Preview"] = "1";
   try {
-    const response = await fetch(`${lotteryApiBase}/state${preview ? "?preview=1" : ""}`, { headers });
+    const response = await fetch(`${lotteryApiBase}/state${preview ? "?preview=1" : ""}`, { headers, credentials: "include", cache: "no-store" });
     const payload = await response.json().catch(() => null) as { success?: boolean; data?: LotteryStateResponse; message?: string } | null;
     if (!response.ok || !payload?.success || !payload.data) {
       throw new Error(payload?.message || `活动服务请求失败（${response.status}）`);
     }
     const data = payload.data;
+    if (!Number.isSafeInteger(data.points)) throw new Error("积分数据无效，请稍后重试");
     Object.assign(state, data);
+    state.pointsLoaded = true;
     if (!Number.isFinite(Number(data.lotteryTokens))) state.lotteryTokens = Number(data.remainingDraws) || 0;
     if (!Number.isFinite(Number(data.remainingDraws))) state.remainingDraws = state.lotteryTokens;
     if (!Number.isFinite(Number(data.starterTokens))) state.starterTokens = Number(data.starterDraws) || 0;
-    if (!Number.isFinite(Number(data.points))) state.points = 1280;
-    if (!Number.isFinite(Number(data.tokenExchangeCost)) || Number(data.tokenExchangeCost) < 1) state.tokenExchangeCost = 100;
-    state.apiReady = true;
-    state.apiError = null;
+    if (!Number.isFinite(Number(data.tokenExchangeCost)) || Number(data.tokenExchangeCost) < 1) state.tokenExchangeCost = preview ? 100 : 0;
+    state.apiReady = data.available !== false;
+    state.apiError = data.available === false ? data.reason || "抽奖与积分兑换暂未开放" : null;
     state.phase = "idle";
   } catch (error) {
     state.apiReady = false;

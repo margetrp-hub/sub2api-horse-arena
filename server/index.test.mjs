@@ -337,6 +337,7 @@ test("lottery service exchanges points for lottery tokens atomically", async () 
 test("lottery routes expose server state and the Pixi runtime animation contract", async () => {
   const lottery = createLotteryService({ random: () => 0.99999 });
   const config = {
+    lotteryPreviewEnabled: true,
     source: "newapi",
     host: "127.0.0.1",
     port: 0,

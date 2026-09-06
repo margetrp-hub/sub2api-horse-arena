@@ -140,15 +140,20 @@ function isSelf(row: RankingRow, currentUserId: RankingRow["user_id"]): boolean 
   return currentUserId !== undefined && String(row.user_id ?? "") === String(currentUserId);
 }
 
-export async function fetchRankingSnapshot(signal?: AbortSignal): Promise<RankingSnapshot> {
-  const url = endpoint();
-  if (!url) throw new Error("Ranking endpoint is not configured");
-
+export function browserSessionHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: "application/json" };
   const authorization = browserAuthorization();
   if (authorization) headers.Authorization = authorization;
   const userId = newApiUserId();
   if (userId) headers["New-Api-User"] = userId;
+  return headers;
+}
+
+export async function fetchRankingSnapshot(signal?: AbortSignal): Promise<RankingSnapshot> {
+  const url = endpoint();
+  if (!url) throw new Error("Ranking endpoint is not configured");
+
+  const headers = browserSessionHeaders();
   const response = await fetch(url, {
     headers,
     credentials: "include",
