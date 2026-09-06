@@ -1,5 +1,70 @@
 # Main Arena Design QA
 
+## Lottery Redesign: 2026-09-07
+
+Status: **LOCAL-VERIFIED**, included in the authorized UI release candidate.
+The machine now stands on an unframed stage, with sharper pixel rendering and
+the same charcoal/lime/coral palette as the workstation. Token and account-point
+balances share one row, followed by draw actions, exchange and the prize section.
+The compact mobile stage makes the main actions accessible earlier in the page.
+
+- Loading and unavailable balances show `--`; login, service failure, retry and
+  server-confirmed closure are distinct. Preview content remains server-authorized.
+- Result dialogs isolate the background, trap keyboard focus and restore the
+  originating action. Reduced motion skips the extended machine animation.
+- 32 browser checks passed across 1440x900, 1280x720, 820x1180, 390x844,
+  320x568 and 844x390. Full screenshots were inspected; no horizontal clipping,
+  JS errors, duplicate submissions during animation or preview disclosure occurred.
+- Draw and exchange tests used browser-local API fixtures. They do not represent
+  real account deductions or prize delivery; live reward opening is unchanged.
+
+Evidence: `output/playwright/lottery-design-20260907/report.json`, desktop/mobile,
+preview, result and mobile-result screenshots in the same directory.
+
+## Current Local UI: 2026-09-07
+
+Status: **LOCAL-VERIFIED**. This section covers the personal workstation, practice
+round and main-entry office sidebar. Historical production and lottery sections
+below describe their own earlier versions; this pass was not deployed.
+
+- Retained the existing layered bitmap room, horse, CRT and boss assets. Replaced
+  the dense bordered interface with an unframed scene, charcoal surfaces, lime
+  actions, mint banked-score feedback and amber/coral inspection states.
+- Lobby prioritizes the workstation and one-minute challenge. The score ledger
+  appears during a round. Lucide icons, input segments, opt-in sound, a paper
+  receipt and responsive character framing share one implementation in both entries.
+- The main entry has a right-hand TOP 10 with keyboard-operable selection, retry,
+  source/empty/error/stale states, and full ranking access on mobile. Selecting a
+  ranking row opens the public office. Local check-in points are labeled as local.
+- Inspected full screenshots at 1440x900, 1280x720, 820x1180, 390x844, 320x568,
+  844x390 and 1920x1080. Corrected a populated-board grid overflow, mobile title
+  overlap with the bitmap sign and the small-screen nameplate covering the character.
+- `npm run test:practice`: 9/9; `npm run test:api`: 23/23; TypeScript/Vite build
+  and `git diff --check` passed. The existing legacy `runtime-config.js` bundling
+  warning remains; both built entries load their runtime assets successfully.
+- Browser QA: 38 checks plus 15 final built-path checks passed. A real-time full
+  round banked 25 points, incurred one catch, and produced a valid receipt. Mobile
+  toggle, keyboard ranking, retry, stale data retention, focus handling, background
+  restoration and both `/game/` and `/game/game.html` were exercised.
+- Desktop canvas had 40,739 sampled colors and 24,208 changed samples; mobile had
+  17,494 colors and 4,920 changed samples. Reduced-motion canvas captures matched.
+  No JS exceptions or missing visual assets were reported. Rendering automation
+  used local Chrome with SwiftShader; this is not a physical-phone GPU benchmark.
+
+Evidence: [`report.json`](./output/playwright/ui-design-20260907/report.json),
+[`final-smoke.json`](./output/playwright/ui-design-20260907/final-smoke.json),
+[`desktop`](./output/playwright/ui-design-20260907/final-desktop.png),
+[`mobile`](./output/playwright/ui-design-20260907/final-mobile.png),
+[`small screen`](./output/playwright/ui-design-20260907/final-small.png), and
+[`receipt`](./output/playwright/ui-design-20260907/desktop-result.png).
+
+Ranking fixtures use `example.com` and are local test data. Final preview captures
+deliberately use an unavailable API state. Live authentication/ranking, account
+progression/rewards, deployment, physical-device behavior and user design approval
+remain **UNVERIFIED**. The dev preview is `http://127.0.0.1:5173/`.
+
+## Historical Arena Baseline
+
 - Source visual truth: `D:\wiki\output\sub2api-horse-arena\assets\api-game-kit-v2\final\oh-haolema-master-fixed-top-row.png`
 - Production implementation: `D:\wiki\output\sub2api-horse-arena\output\playwright\game-real-screens-production.png`
 - Desktop implementation: `D:\wiki\output\sub2api-horse-arena\output\playwright\game-real-screens-desktop.png`

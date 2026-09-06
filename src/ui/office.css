@@ -1,0 +1,107 @@
+html, body, #app { background: #181d1c; color: #f2f4ed; font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; }
+.game-shell, .game-shell * { letter-spacing: 0; }
+.game-shell {
+  width: min(100%, 1680px); height: 100dvh; max-height: none; padding: 0;
+  grid-template-columns: minmax(0, 1fr) 330px; grid-template-areas: "game rank";
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch; gap: 0;
+}
+.game-shell .playfield { align-self: center; max-height: 100%; border: 0; box-shadow: none; background: #181d1c; }
+.game-shell .playfield.has-practice { align-self: stretch; height: 100%; aspect-ratio: auto; }
+.game-shell .playfield::before, .game-shell .side-panel::before { display: none; }
+.game-shell .side-panel { height: 100%; min-height: 0; align-self: stretch; gap: 0; padding: 0 20px; border: 0; border-left: 1px solid #353d35; box-shadow: none; background: #202623; grid-template-rows: 116px 72px minmax(100px, 1fr) auto 100px; }
+.office-scene-heading { position: absolute; left: 24px; top: 22px; z-index: 4; display: grid; gap: 5px; pointer-events: none; text-shadow: 0 2px 3px #121b16; }
+.office-scene-heading strong { font-size: 24px; color: #eff4e9; }
+.office-scene-heading > span { font-size: 12px; color: #c1ef73; }
+.game-shell button { cursor: pointer; }
+.game-shell button:focus-visible { outline: 2px solid #83deca; outline-offset: 3px; }
+.game-shell .board-header { display: grid; grid-template-columns: minmax(0, 1fr) 48px; align-content: center; align-items: center; gap: 10px 4px; padding: 0; border-bottom: 1px solid #3b443b; }
+.board-eyebrow { display: flex !important; align-items: center; gap: 7px; font-size: 11px !important; font-weight: 500 !important; color: #c4cdc2 !important; }
+.board-eyebrow svg { width: 14px; height: 14px; color: #c1ef73; }
+.board-header h2 { margin: 5px 0 0; font: 400 24px/1 "Cascadia Code", monospace; color: #f0f2e9; }
+.board-header h2 b { color: #c1ef73; font-weight: 700; }
+.game-shell .board-refresh { position: relative; display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 1px solid #3e493c; border-radius: 6px; background: transparent; color: #bac9b4; }
+.board-refresh:disabled { opacity: .4; cursor: default; }
+.board-refresh:not(:disabled):hover { background: #35402f; }
+.board-refresh::after { content: attr(data-tooltip); position: absolute; right: 0; top: calc(100% + 5px); padding: 5px 8px; z-index: 5; color: #eef4e7; background: #3c4a33; font-size: 10px; white-space: nowrap; opacity: 0; pointer-events: none; }
+.board-refresh:hover::after, .board-refresh:focus-visible::after { opacity: 1; }
+.board-header > em { display: flex; align-items: center; gap: 6px; color: #a7b7a6; font-style: normal; font-size: 10px; white-space: nowrap; }
+.board-header > em > i { width: 5px; height: 5px; background: #a7d68c; flex: 0 0 auto; }
+.board-header > .source-unavailable, .board-header > .source-stale { color: #e9b38f; }
+.board-header > .source-unavailable > i, .board-header > .source-stale > i { background: #ff9a86; }
+.board-header > .source-loading > i { background: #dccc96; }
+.board-sync { justify-self: end; font: 9px "Cascadia Code", "Microsoft YaHei", monospace !important; color: #9fac9b !important; white-space: nowrap; }
+.board-summary { display: grid; grid-template-columns: 1.5fr 1fr; align-content: center; border-bottom: 1px solid #3b443b; }
+.board-summary > span { font-size: 10px; color: #a0af9d; }
+.board-summary > span:last-child { text-align: right; }
+.board-summary strong { display: block; margin-top: 4px; font: 500 19px/1.2 "Cascadia Code", monospace; color: #e5ecdf; }
+.board-summary small { margin-left: 5px; font: 9px "Microsoft YaHei", sans-serif; color: #9ba997; }
+.game-shell .board-list { display: flex; flex-direction: column; gap: 0; margin: 0; padding: 8px 0; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: #5d7054 transparent; }
+.game-shell .board-list .rank-card { display: block; flex: 1 0 47px; min-height: 47px; max-height: 64px; padding: 0; border: 0; border-bottom: 1px solid #343d32; border-radius: 0; background: transparent; box-shadow: none; outline: 0; }
+.game-shell .board-list .rank-card:last-child { border-bottom: 0; }
+.game-shell .board-list .rank-card.is-selected { background: #303c2c; box-shadow: inset 2px 0 #c1ef73; }
+.rank-select { display: grid; grid-template-columns: 27px minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; height: 100%; min-height: 47px; padding: 5px 7px; border: 0; border-radius: 0; background: transparent; color: inherit; text-align: left; }
+.rank-select:hover { background: #3b46302e; }
+.rank-select:focus-visible { outline-offset: -3px !important; }
+.game-shell .board-list .rank-medal { display: block; width: 27px; height: auto; color: #9daf94; background: none; border: 0; box-shadow: none; font: 14px "Cascadia Code", monospace; text-align: center; }
+.game-shell .board-list .rank-card:nth-child(1) .rank-medal { color: #dfe89b; }
+.game-shell .board-list .rank-card:nth-child(2) .rank-medal { color: #cad8dd; }
+.game-shell .board-list .rank-card:nth-child(3) .rank-medal { color: #f0b29b; }
+.game-shell .board-player { min-width: 0; display: grid; gap: 4px; }
+.game-shell .board-player > strong { color: #e8eee2; font-size: 12px; font-weight: 500; line-height: 1.2; }
+.game-shell .board-player > span { color: #a2b098; font-size: 10px; line-height: 1.2; }
+.game-shell .board-list .board-tokens { display: flex; align-items: end; flex-direction: column; gap: 4px; overflow: visible; color: #d6e4cb; font: 12px "Cascadia Code", monospace; }
+.game-shell .rank-delta { margin: 0 0 0 4px; padding: 0; border: 0; background: none; color: #a4dcb9; font-size: 9px; animation: none; }
+.game-shell .rank-delta.down { color: #eca898; }
+.game-shell .current-mark { display: inline; padding: 0; margin-left: 5px; border: 0; background: none; color: #c1ef73; font-size: 9px; }
+.game-shell .board-empty { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 170px; padding: 20px 8px; border: 0; background: transparent; }
+.board-empty > svg { width: 32px; height: 32px; color: #a2b490; margin-bottom: 8px; }
+.game-shell .board-empty > strong { font-size: 14px; color: #dbe4d3; }
+.game-shell .board-empty > span { font-size: 11px; color: #a4b49b; }
+.board-retry { min-height: 48px; margin-top: 5px; padding: 8px 16px; border: 1px solid #526546; border-radius: 5px; background: #2c3827; color: #c9e2b5; font-size: 12px; }
+.board-personal { padding: 16px 0; border-top: 1px solid #434d3d; }
+.board-identity { display: flex; align-items: center; gap: 10px; }
+.board-identity > svg { color: #bfcdaf; width: 19px; height: 19px; flex: 0 0 auto; }
+.board-identity > div { min-width: 0; flex: 1; }
+.board-identity strong { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #e6eddf; font-size: 12px; font-weight: 500; }
+.board-identity span { display: block; margin-top: 5px; color: #a2b097; font-size: 10px; }
+.board-identity > b { color: #c3e49e; font: 11px "Cascadia Code", monospace; }
+.board-gap { margin: 8px 0 0 29px; color: #c2cfb4; font-size: 10px; }
+.board-checkin { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.board-checkin > span { color: #a3b498; font-size: 10px; }
+.board-checkin b { color: #d4e7ba; font: 14px "Cascadia Code", monospace; margin-left: 5px; }
+.game-shell .checkin-button { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 48px; padding: 8px 10px; border: 0; border-radius: 5px; background: #34422b; color: #d3e7b6; box-shadow: none; font-size: 11px; }
+.game-shell .checkin-button:hover { transform: none; background: #455635; }
+.checkin-button svg { width: 14px; height: 14px; }
+.game-shell .checkin-button:disabled { background: transparent; color: #a4b797; }
+.board-activity { display: grid; grid-template-columns: 44px minmax(0, 1fr) 48px; align-items: center; gap: 12px; border-top: 1px solid #434d3d; }
+.board-activity > img { width: 44px; height: 62px; object-fit: contain; image-rendering: pixelated; }
+.board-activity > div > span { color: #b9c1b1; font-size: 9px; }
+.board-activity h3 { margin: 4px 0; color: #e7ecdf; font-size: 14px; font-weight: 500; }
+.board-activity small { color: #d0b58c; font-size: 10px; }
+.game-shell .lottery-open-button { display: grid; place-items: center; width: 48px; height: 48px; min-height: 48px; padding: 0; border: 1px solid #4f5c44; border-radius: 5px; color: #d6e7be; background: transparent; box-shadow: none; }
+.game-shell .lottery-open-button:hover { background: #3a472f; transform: none; }
+.game-shell .toast { width: max-content; min-width: 0; max-width: calc(100% - 40px); border: 1px solid #687b54; border-radius: 5px; background: #263a22; color: #e2f2ce; font-size: 14px; }
+@media (max-width: 1100px) and (min-width: 761px) {
+  .game-shell { grid-template-columns: minmax(0, 1fr) 290px; }
+  .game-shell .side-panel { padding-inline: 15px; }
+  .game-shell .board-player > strong { font-size: 11px; }
+}
+@media (max-width: 760px) {
+  html, body, #app { height: auto; min-height: 100%; overflow: auto; }
+  #app { display: block; }
+  .game-shell { height: auto; min-height: 100dvh; display: flex; flex-direction: column; }
+  .game-shell .playfield { flex: 0 0 auto; max-height: none; aspect-ratio: 4 / 3; align-self: start; }
+  .game-shell .side-panel { width: 100%; height: auto; min-height: 520px; border-left: 0; border-top: 1px solid #434d3d; padding: 0 18px; grid-template-rows: 110px 72px auto auto 100px; }
+  .game-shell .board-header { grid-row: auto; grid-column: auto; }
+  .game-shell .board-list { grid-row: auto; grid-column: auto; max-height: 360px; min-height: 190px; }
+  .game-shell .board-list .rank-card { display: block; min-height: 52px; flex-basis: 52px; }
+  .game-shell .board-empty { min-height: 190px; height: auto; }
+  .board-checkin { margin-top: 8px; }
+  .office-scene-heading { top: 18px; left: 16px; }
+  .office-scene-heading strong { font-size: 18px; }
+  .office-scene-heading > span { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-shell *, .game-shell *::before, .game-shell *::after { animation: none !important; transition: none !important; }
+}

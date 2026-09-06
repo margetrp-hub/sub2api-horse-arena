@@ -627,6 +627,11 @@ async function refreshLiveRanking(rebuild) {
     if (!response.ok || payload.success !== true) {
       throw new Error(payload.message || "排行榜接口不可用");
     }
+    const current = payload.data?.current_user || payload.data?.currentUser;
+    const practiceIdentity = current && typeof current === "object"
+      ? { name: current.name, rank: current.rank } : null;
+    document.getElementById("frame").dataset.practiceIdentity = JSON.stringify(practiceIdentity);
+    window.dispatchEvent(new CustomEvent("haolema:ranking-current-user", { detail: practiceIdentity }));
     applyLiveRanking(payload.data);
     if (rebuild) {
       closeDetail();
@@ -1426,6 +1431,10 @@ function loop(now) {
   last = now;
   state.time = now;
   tickData(dt);
+  if (document.getElementById("frame").dataset.practiceVisible === "true") {
+    requestAnimationFrame(loop);
+    return;
+  }
   render(dt);
   renderRank();
   if (Math.floor(now / 250) !== clockTick) {
@@ -1461,5 +1470,6 @@ async function start() {
 }
 start();
 </script>
+<script type="module" src="/src/practice/legacy-entry.ts"></script>
 </body>
 </html>

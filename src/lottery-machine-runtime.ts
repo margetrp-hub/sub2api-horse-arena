@@ -16,13 +16,13 @@ type Ball = {
 
 const WIDTH = 720;
 const HEIGHT = 720;
-const PIXEL_SCALE = 1 / 3;
+const PIXEL_SCALE = 2 / 3;
 const ANIMATION_DURATION = 6200;
-const GOLD = 0xf3c969;
-const GOLD_LIGHT = 0xffedac;
-const GLASS = 0x62e0ce;
-const CHARCOAL = 0x102a2d;
-const DEEP = 0x061519;
+const GOLD = 0xc1ef73;
+const GOLD_LIGHT = 0xe3efcf;
+const GLASS = 0x83deca;
+const CHARCOAL = 0x333c36;
+const DEEP = 0x151d18;
 const BALL_COLORS = [0xff806d, 0x62e0ce, 0xf3c969, 0xf8f0d6, 0x75b7e8, 0xffa45f];
 
 function clamp(value: number, min = 0, max = 1): number {
@@ -85,6 +85,7 @@ export class LotteryMachineRuntime {
   private running = false;
   private completed = false;
   private destroyed = false;
+  private completionTimer: number | undefined;
   private readonly activate = (event?: MouseEvent): void => {
     if (event) {
       const rect = this.mount.getBoundingClientRect();
@@ -103,12 +104,13 @@ export class LotteryMachineRuntime {
   constructor(mount: HTMLElement, options: LotteryMachineRuntimeOptions) {
     this.mount = mount;
     this.options = options;
-    this.mount.setAttribute("role", "img");
-    this.mount.setAttribute("aria-label", "可交互的幸运扭蛋机");
+    const enabled = this.mount.dataset.canDraw === "true";
+    this.mount.setAttribute("role", enabled ? "button" : "img");
+    this.mount.setAttribute("aria-label", enabled ? "扭一次，消耗一枚代币" : "幸运扭蛋机");
     this.mount.dataset.runtimeState = "idle";
     this.mount.addEventListener("click", this.activate);
     this.mount.addEventListener("keydown", this.activateFromKeyboard);
-    this.mount.tabIndex = 0;
+    this.mount.tabIndex = enabled ? 0 : -1;
 
     this.app = new Application<HTMLCanvasElement>({
       width: WIDTH * PIXEL_SCALE,
@@ -127,7 +129,7 @@ export class LotteryMachineRuntime {
       fontSize: 11,
       fontWeight: "700",
       fill: 0xfff0d2,
-      letterSpacing: 2,
+      letterSpacing: 0,
       dropShadow: true,
       dropShadowColor: 0x451c1a,
       dropShadowBlur: 2,
@@ -148,12 +150,17 @@ export class LotteryMachineRuntime {
     this.startedAt = performance.now();
     this.mount.dataset.runtimeState = "playing";
     this.statusText.text = "RUN";
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      this.completionTimer = window.setTimeout(() => this.options.onComplete(), 100);
+      return;
+    }
     this.app.ticker.start();
   }
 
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
+    window.clearTimeout(this.completionTimer);
     this.mount.removeEventListener("click", this.activate);
     this.mount.removeEventListener("keydown", this.activateFromKeyboard);
     this.app.ticker.remove(this.tick, this);
@@ -161,27 +168,6 @@ export class LotteryMachineRuntime {
   }
 
   private buildScene(): void {
-    const stageGlow = new Graphics();
-    stageGlow.beginFill(0x0b2427, 0.96);
-    stageGlow.drawRect(108, 68, 504, 628);
-    stageGlow.endFill();
-    stageGlow.lineStyle(3, 0x2a5e60, 0.95);
-    stageGlow.drawRect(108, 68, 504, 628);
-    stageGlow.lineStyle(2, GOLD, 0.32);
-    stageGlow.drawRect(124, 84, 472, 596);
-    stageGlow.beginFill(GLASS, 0.1);
-    stageGlow.drawRect(132, 104, 12, 12);
-    stageGlow.drawRect(576, 160, 12, 12);
-    stageGlow.drawRect(148, 610, 18, 18);
-    stageGlow.drawRect(554, 574, 18, 18);
-    stageGlow.endFill();
-    for (let x = 140; x < 590; x += 30) {
-      stageGlow.beginFill(GLASS, 0.055);
-      stageGlow.drawRect(x, 116, 1, 540);
-      stageGlow.endFill();
-    }
-    this.machine.addChild(stageGlow);
-
     const shadow = new Graphics();
     shadow.beginFill(DEEP, 0.95);
     shadow.drawRect(184, 690, 352, 18);
@@ -341,7 +327,7 @@ export class LotteryMachineRuntime {
       fontSize: 14,
       fontWeight: "700",
       fill: GOLD_LIGHT,
-      letterSpacing: 1.4,
+      letterSpacing: 0,
     }));
     capText.anchor.set(0.5);
     capText.position.set(360, 103);
@@ -377,7 +363,7 @@ export class LotteryMachineRuntime {
       fontSize: 17,
       fontWeight: "700",
       fill: GOLD_LIGHT,
-      letterSpacing: 2,
+      letterSpacing: 0,
     }));
     lucky.anchor.set(0.5);
     lucky.position.set(379, 476);

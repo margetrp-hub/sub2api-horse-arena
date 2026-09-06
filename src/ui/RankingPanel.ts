@@ -1,11 +1,15 @@
 import type { CurrentUserStatus } from "../api/ranking";
 import { formatTokens } from "../data/players";
+import { assetPath } from "../game/constants";
 import type { Player, RankingSource } from "../types";
+import { ArrowRight, Check, CircleCheck, RefreshCw, Trophy, Unplug, UserRound } from "lucide";
+import { icon } from "./icons";
 
 type RankingPanelOptions = {
   players: Player[];
   selected: Player;
   onSelect: (player: Player) => void;
+  onRefresh?: () => void;
   onLotteryOpen?: () => void;
   onCheckin?: () => void;
   personalPoints?: number;
@@ -27,142 +31,88 @@ type RankingPanelOptions = {
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, (character) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-      character
-    ] as string,
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] as string,
   );
 }
 
 function sourceLabel(source: RankingPanelOptions["source"]): string {
-  if (source === "loaded") return "近 7 日 · 实时";
+  if (source === "loaded") return "近 7 日 · 已同步";
   if (source === "stale") return "近 7 日 · 更新失败";
   if (source === "unavailable") return "近 7 日 · 暂不可用";
-  return "近 7 日 · 加载中";
-}
-
-function sourceName(source: RankingPanelOptions["rankingSource"]): string {
-  return source === "sub2api" ? "Sub2API" : source === "newapi" ? "NewAPI" : "排行榜";
+  return "近 7 日 · 连接中";
 }
 
 function deltaMarkup(value: number | undefined): string {
   if (!value) return "";
-  const direction = value > 0 ? "up" : "down";
-  const mark = value > 0 ? "↑" : "↓";
-  return `<small class="rank-delta ${direction}">${mark}${Math.abs(value)}</small>`;
+  return `<small class="rank-delta ${value > 0 ? "up" : "down"}">${value > 0 ? "↑" : "↓"}${Math.abs(value)}</small>`;
 }
 
 export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptions): void {
-  const hasRanking = options.players.length > 0;
   const current = options.currentUser;
-  const boardSource = sourceName(options.rankingSource);
-  const currentPosition = !current
-    ? "登录后显示个人排名"
-    : current.rank === null
-      ? "近 7 日未上榜"
-      : current.inTop
-        ? `近 7 日第 ${current.rank} 名 · 已进入 TOP 10`
-        : `近 7 日第 ${current.rank} 名 · 未进入 TOP 10`;
-  const lottery = options.lottery ?? {
-    preview: false,
-    paidAmount: 0,
-    threshold: 50,
-    availableTokens: 0,
-    starterTokens: 0,
-  };
-  const lotteryProgress = Math.min(100, Math.max(0, (lottery.paidAmount / lottery.threshold) * 100));
-  const lotteryStatus = lottery.preview ? "READY" : "LOCKED";
-  const lotteryAction = lottery.preview ? "进入扭蛋机" : "查看活动";
-  const personalPoints = Math.max(0, Math.floor(options.personalPoints ?? 1280));
-  const checkinAction = options.checkedIn ? "已签到 +10" : "每日签到 +10";
-  const checkinStatus = options.checkedIn ? "今日已签到" : "今日未签到";
-  const topTenFloor = options.players.find((player) => player.rank === 10) ?? options.players[options.players.length - 1];
-  const personalGap = current && !current.inTop && topTenFloor
-    ? Math.max(0, topTenFloor.tokens - current.tokens)
-    : 0;
-  const personalRankLabel = !current ? "未登录" : current.inTop && current.rank ? `第 ${current.rank} 名` : "未上榜";
-  const personalRankDetail = !current
-    ? "登录后显示个人排名"
-    : current.inTop
-      ? "已进入 TOP10"
-      : `距 TOP10 ${formatTokens(personalGap)} Token`;
+  const hasSnapshot = options.source === "loaded" || options.source === "stale";
+  const source = options.rankingSource === "sub2api" ? "Sub2API" : options.rankingSource === "newapi" ? "NewAPI" : "Token";
+  const loading = !options.source || options.source === "loading";
+  const emptyTitle = loading ? "榜单连接中" : options.source === "unavailable" ? "榜单暂时离线" : "这周，工位还很安静";
+  const emptyDetail = loading ? "正在同步近 7 日消耗" : options.source === "unavailable" ? "暂时无法取得排名数据" : "近 7 日暂无 Token 消耗";
+  const floor = options.players.find((player) => player.rank === 10);
+  const position = !current ? "登录后显示个人排名" : current.rank === null ? "近 7 日未上榜"
+    : `近 7 日第 ${current.rank} 名${current.inTop ? " · TOP 10" : ""}`;
+  const gap = current && !current.inTop && floor
+    ? `距 TOP 10 ${formatTokens(Math.max(0, floor.tokens - current.tokens))} Token` : "";
+  const lottery = options.lottery;
+  const active = document.activeElement instanceof HTMLElement && root.contains(document.activeElement)
+    ? document.activeElement.dataset.focus : undefined;
+  const scrollTop = root.querySelector(".ranking")?.scrollTop ?? 0;
+  const syncDate = options.lastSync ? new Date(options.lastSync) : null;
+  const syncTime = syncDate && Number.isFinite(syncDate.getTime())
+    ? new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(syncDate) : "";
 
   root.innerHTML = `
-    <header class="side-header">
-      <div class="side-heading">
-        <span class="side-title">TOKEN 周榜</span>
-        <em class="source-${options.source ?? "loading"}">${escapeHtml(boardSource)} · ${sourceLabel(options.source)}</em>
-      </div>
-      <strong><span class="desktop-top">TOP 10</span><span class="mobile-top">TOP 3</span></strong>
+    <header class="side-header board-header">
+      <div><span class="board-eyebrow">${icon(Trophy)} 办公室周榜</span><h2>TOP <b>10</b></h2></div>
+      <button class="board-refresh" type="button" aria-label="刷新排行榜" title="刷新排行榜" data-tooltip="刷新排行榜" data-focus="refresh" ${loading ? "disabled" : ""}>${icon(RefreshCw)}</button>
+      <em class="source-${options.source ?? "loading"}"><i aria-hidden="true"></i>${escapeHtml(source)} · ${sourceLabel(options.source)}</em>
+      <span class="board-sync">${syncTime ? `${syncTime} 更新` : "7 DAYS"}</span>
     </header>
-    <section class="activity-entry" aria-labelledby="activity-entry-title">
-      <div class="activity-entry-head">
-        <div>
-          <span class="activity-entry-kicker">活动中心 / 01</span>
-          <strong id="activity-entry-title">幸运扭蛋机</strong>
-        </div>
-        <em>${lotteryStatus}</em>
-      </div>
-      <p>消费每满 ${money(lottery.threshold)}，获得 1 枚抽奖代币</p>
-      <div class="activity-entry-bottom">
-        <div class="activity-entry-progress">
-          <strong>${money(lottery.paidAmount)} / ${money(lottery.threshold)}</strong>
-          <span><i style="width:${lotteryProgress.toFixed(2)}%"></i></span>
-        </div>
-        <strong class="activity-entry-count">${lottery.availableTokens}<small>枚</small></strong>
-        <button class="lottery-open-button" type="button">${lotteryAction}</button>
-      </div>
-    </section>
-    <ol class="ranking">
-      ${hasRanking
-        ? options.players
-          .slice(0, 10)
-          .map(
-            (player) => `
-              <li class="rank-card ${player.rank === options.selected.rank ? "is-selected" : ""} ${player.self ? "is-self" : ""}" data-rank="${player.rank}">
-                <span class="rank-medal">${player.rank}</span>
-                <span>
-                  <strong>${escapeHtml(player.name)}${player.self ? '<small class="current-mark">我</small>' : ""}${player.title ? `<small class="player-title">${escapeHtml(player.title)}</small>` : ""}${deltaMarkup(player.rankDelta)}</strong>
-                  <span>${formatTokens(player.tokens)} token · ${escapeHtml(player.state)}</span>
-                </span>
-              </li>
-            `,
-          )
-          .join("")
-        : `<li class="ranking-empty">
-            <strong>近 7 日暂无 Token 消耗</strong>
-            <span>有人开工后将自动上榜</span>
-          </li>`}
+    <div class="board-summary"><span>全榜消耗<strong>${hasSnapshot ? formatTokens((options.totalTokens ?? 0) / 10000) : "--"}<small>Token</small></strong></span><span>活跃人数<strong>${hasSnapshot ? options.activeUsers ?? 0 : "--"}<small>人</small></strong></span></div>
+    <ol class="ranking board-list" aria-label="近 7 日 Token TOP 10" aria-busy="${loading}">
+      ${options.players.length ? options.players.slice(0, 10).map((player) => `
+        <li class="rank-card ${player.rank === options.selected.rank ? "is-selected" : ""} ${player.self ? "is-self" : ""}" data-rank="${player.rank}">
+          <button class="rank-select" type="button" data-focus="rank-${player.rank}" aria-pressed="${player.rank === options.selected.rank}">
+            <span class="rank-medal">${String(player.rank).padStart(2, "0")}</span>
+            <span class="board-player"><strong>${escapeHtml(player.name)}${player.self ? '<small class="current-mark">我</small>' : ""}</strong><span>${escapeHtml(player.state)}${player.title ? ` · ${escapeHtml(player.title)}` : ""}</span></span>
+            <span class="board-tokens">${formatTokens(player.tokens)}${deltaMarkup(player.rankDelta)}</span>
+          </button>
+        </li>`).join("") : `
+        <li class="ranking-empty board-empty">${icon(options.source === "unavailable" ? Unplug : Trophy)}<strong>${emptyTitle}</strong><span>${emptyDetail}</span>${options.source === "unavailable" ? '<button type="button" class="board-retry" data-focus="retry">重新连接</button>' : ""}</li>`}
     </ol>
-    <section class="personal-card" aria-label="个人活动">
-      <div class="personal-rank-line">
-        <div><small>近 7 日个人排名</small><strong>${personalRankLabel}</strong></div>
-        <em>${personalRankDetail}</em>
-      </div>
-      <div class="personal-head"><span>个人活动</span><em>${checkinStatus}</em></div>
-      <div class="personal-main">
-        <div class="personal-points"><small>我的积分</small><strong>${personalPoints}</strong><label>PTS</label></div>
-        <button class="checkin-button" type="button" ${options.checkedIn ? "disabled" : ""}>${checkinAction}</button>
-      </div>
+    <section class="board-personal" aria-label="我的排名与本地签到">
+      <div class="board-identity">${icon(UserRound)}<div><strong>${escapeHtml(current?.name ?? "访客工位")}</strong><span>${escapeHtml(position)}</span></div>${current ? `<b>${formatTokens(current.tokens)}</b>` : ""}</div>
+      ${gap ? `<p class="board-gap">${escapeHtml(gap)}</p>` : ""}
+      <div class="board-checkin"><span>本机积分 <b>${Math.max(0, Math.floor(options.personalPoints ?? 1280))}</b></span><button class="checkin-button" data-focus="checkin" type="button" ${options.checkedIn ? "disabled" : ""}>${icon(options.checkedIn ? Check : CircleCheck)}${options.checkedIn ? "今日已签到" : "签到 +10"}</button></div>
     </section>
-    <section class="self-card">
-      <span>我的排名</span>
-      <strong>${escapeHtml(current?.name ?? "尚未识别当前用户")}</strong>
-      <span>${escapeHtml(currentPosition)}${deltaMarkup(current?.rankDelta)}</span>
-      <span>${current ? `${formatTokens(current.tokens)} token${current.tokenDelta ? ` · ${current.tokenDelta > 0 ? "+" : ""}${formatTokens(current.tokenDelta)}` : ""}` : `请先登录 ${escapeHtml(boardSource)}`} · 全榜 ${formatTokens((options.totalTokens ?? 0) / 10000)} token</span>
+    <section class="board-activity" aria-labelledby="activity-entry-title">
+      <img src="${assetPath("lottery-capsule-machine.png")}" alt="" width="52" height="68">
+      <div><span>活动中心</span><h3 id="activity-entry-title">幸运扭蛋机</h3><small>${lottery?.preview ? `预览 · ${lottery.availableTokens} 枚代币` : "活动暂未开放"}</small></div>
+      <button class="lottery-open-button" data-focus="lottery" type="button" aria-label="查看幸运扭蛋机" title="查看幸运扭蛋机">${icon(ArrowRight)}</button>
     </section>
   `;
 
-  root.querySelectorAll<HTMLElement>(".rank-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const rank = Number(card.dataset.rank);
+  root.querySelectorAll<HTMLButtonElement>(".rank-select").forEach((button) => {
+    button.addEventListener("click", () => {
+      const rank = Number(button.closest<HTMLElement>("[data-rank]")?.dataset.rank);
       const player = options.players.find((item) => item.rank === rank);
       if (player) options.onSelect(player);
     });
   });
+  root.querySelectorAll<HTMLButtonElement>(".board-refresh, .board-retry").forEach((button) =>
+    button.addEventListener("click", () => options.onRefresh?.()));
   root.querySelector<HTMLButtonElement>(".lottery-open-button")?.addEventListener("click", () => options.onLotteryOpen?.());
   root.querySelector<HTMLButtonElement>(".checkin-button")?.addEventListener("click", () => options.onCheckin?.());
-}
-
-function money(value: number): string {
-  return `¥${value.toFixed(2)}`;
+  const list = root.querySelector(".ranking");
+  if (list) list.scrollTop = scrollTop;
+  if (active) {
+    const target = [...root.querySelectorAll<HTMLButtonElement>("[data-focus]")].find((button) => button.dataset.focus === active);
+    if (target && !target.disabled) target.focus({ preventScroll: true });
+  }
 }

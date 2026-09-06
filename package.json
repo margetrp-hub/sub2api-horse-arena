@@ -8,9 +8,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "api": "node server/index.mjs",
-    "test:api": "node --test server/*.test.mjs"
+    "test:api": "node --test server/*.test.mjs",
+    "test:practice": "node --test tests/practice.test.mjs"
   },
   "dependencies": {
+    "lucide": "^1.41.0",
     "pixi.js": "^7.4.3"
   },
   "devDependencies": {

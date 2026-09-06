@@ -15,6 +15,7 @@ export class GameApp {
   private readonly app: Application<HTMLCanvasElement>;
   private scene?: NetbarScene;
   private players: Player[];
+  private paused = false;
 
   constructor(private readonly mount: HTMLElement, private readonly options: GameAppOptions) {
     this.players = options.players;
@@ -55,6 +56,7 @@ export class GameApp {
     this.scene.update(performance.now());
     this.app.renderer.render(this.app.stage);
     this.app.ticker.add(() => this.scene?.update(performance.now()));
+    if (this.paused) this.app.stop();
   }
 
   selectRank(rank: number): void {
@@ -64,6 +66,12 @@ export class GameApp {
   setPlayers(players: Player[]): void {
     this.players = players;
     this.scene?.setPlayers(players);
+  }
+
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+    if (paused) this.app.stop();
+    else this.app.start();
   }
 
   destroy(): void {

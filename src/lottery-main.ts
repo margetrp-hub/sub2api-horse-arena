@@ -1,6 +1,8 @@
 import "./lottery-page.css";
 import { LotteryMachineRuntime } from "./lottery-machine-runtime";
 import { browserSessionHeaders } from "./api/ranking";
+import { ArrowLeft, ArrowRight, CircleHelp, Coins, Gift, LockKeyhole, RefreshCw, Ticket, X } from "lucide";
+import { icon } from "./ui/icons";
 
 type PrizeKind = "empty" | "balance" | "coupon" | "subscription";
 
@@ -65,9 +67,11 @@ const state = {
   grantStatus: null as "committed" | "pending" | null,
   apiReady: false,
   apiError: null as string | null,
+  loadError: null as "login" | "unavailable" | null,
 };
 
 let activeRuntime: LotteryMachineRuntime | null = null;
+let returnFocusKey: string | undefined;
 
 function money(value: number): string {
   return `¥${value.toFixed(2)}`;
@@ -106,9 +110,9 @@ function renderResultModal(): string {
   return `
     <div class="lottery-result-backdrop" data-result-dismiss></div>
     <section class="lottery-result-modal" role="dialog" aria-modal="true" aria-labelledby="lottery-result-title">
-      <button class="result-close" type="button" aria-label="关闭中奖结果" data-result-dismiss>×</button>
+      <button class="result-close icon-button" type="button" aria-label="关闭中奖结果" title="关闭中奖结果" data-result-dismiss>${icon(X)}</button>
       <div class="result-kicker">本次结果</div>
-      <h2 id="lottery-result-title">${state.revealedResults.length === 1 ? escapeHtml(state.revealedResults[0].label) : `${state.revealedResults.length} 个扭蛋已开出`}</h2>
+      <h2 id="lottery-result-title" tabindex="-1">${state.revealedResults.length === 1 ? escapeHtml(state.revealedResults[0].label) : `${state.revealedResults.length} 个扭蛋已开出`}</h2>
       <img class="opened-capsule-art" src="${assetBase}assets/lottery-capsule-open-v1.png" alt="已打开的幸运扭蛋">
       <div class="result-chips">${chips}</div>
       <p>${escapeHtml(detail)} · ${deliveryNote}</p>
@@ -118,6 +122,8 @@ function renderResultModal(): string {
 }
 
 function render(): void {
+  const focusKey = (document.activeElement as HTMLElement | null)?.dataset.focus ?? returnFocusKey;
+  if (focusKey) returnFocusKey = focusKey;
   activeRuntime?.destroy();
   activeRuntime = null;
   const progress = Math.min(100, (state.paidAmount / state.threshold) * 100);
@@ -125,96 +131,100 @@ function render(): void {
   const canDraw = state.apiReady && state.phase === "idle" && !state.pendingResults && state.lotteryTokens > 0;
   const canFiveDraw = canDraw && state.lotteryTokens >= 5;
   const canExchange = state.apiReady && state.phase === "idle" && state.tokenExchangeCost > 0 && state.points >= state.tokenExchangeCost;
-  const machineStatus = state.phase === "loading"
-    ? "连接活动服务"
-    : state.phase === "requesting"
-      ? "确认抽奖结果"
-      : state.phase === "rolling"
-        ? "机器运转中"
-        : state.phase === "revealed"
-          ? "结果已揭晓"
-          : state.phase === "exchanging"
-            ? "积分兑换中"
-            : "等待抽奖";
-  const apiStatus = state.apiError
-    ? `<small class="chance-error">${escapeHtml(state.apiError)}</small>`
-    : "";
+  const busy = ["loading", "requesting", "rolling", "exchanging"].includes(state.phase);
+  const machineStatus = ({
+    loading: "正在连接", requesting: "正在确认抽奖", rolling: "好运正在出仓",
+    revealed: "扭蛋已揭晓", exchanging: "正在兑换代币", idle: state.apiReady ? "等待下一份好运" : "期待下一次开启",
+  })[state.phase];
+  const status = state.phase === "loading" ? "连接中" : preview ? "活动预览" : state.apiReady ? "活动进行中" : "暂未开放";
+  const errorNotice = state.loadError === "login"
+    ? `<div class="notice-copy">${icon(LockKeyhole)}<div><strong>登录后查看账户</strong><p>积分与抽奖代币将在这里显示</p></div></div><a class="notice-link" href="${window.OH_HAOLEMA_RUNTIME?.source === "sub2api" ? "/login" : "/sign-in"}">登录 ${icon(ArrowRight)}</a>`
+    : state.loadError === "unavailable"
+      ? `<div class="notice-copy">${icon(CircleHelp)}<div><strong>暂时无法连接活动</strong><p>请稍后再试</p></div></div><button class="icon-button" data-retry data-focus="retry" title="重新连接" aria-label="重新连接活动服务">${icon(RefreshCw)}</button>`
+      : state.apiError
+        ? `<div class="notice-copy">${icon(state.apiReady ? CircleHelp : LockKeyhole)}<div><strong>${state.apiReady ? "操作未完成" : "活动筹备中"}</strong><p>${escapeHtml(state.apiError)}</p></div></div>`
+        : "";
 
   root.innerHTML = `
     <div class="lottery-page" data-phase="${state.phase}">
       <header class="lottery-topbar">
-        <a class="brand-lockup" href="${assetBase}game.html${preview ? '?lotteryPreview=1' : ''}" aria-label="回到 OH! 薅乐马">
+        <a class="brand-lockup" href="${assetBase}" aria-label="回到薅乐马">
           <span class="brand-mark">OH!</span>
-          <span><strong>薅乐马</strong><small>AI 社区活动中心</small></span>
+          <span><strong>薅乐马</strong><small>打工人的快乐据点</small></span>
         </a>
-        <div class="topbar-meta">
-          <span class="activity-pill"><i></i>${preview ? '活动预览' : '暂未开放'}</span>
-          <a class="back-link" href="${assetBase}game.html${preview ? '?lotteryPreview=1' : ''}">回到薅乐马</a>
-        </div>
+        <a class="back-link" href="${assetBase}">${icon(ArrowLeft)}<span>回到工位</span></a>
       </header>
 
       <main class="lottery-layout">
         <section class="lottery-hero" aria-labelledby="lottery-title">
           <div class="hero-copy">
-            <span class="hero-eyebrow">OH! 薅乐马 · 消费回馈计划</span>
-            <p>${preview ? `每累计消费 ${money(state.threshold)}，获得 1 枚抽奖代币。<br>消费获得的代币长期有效。` : '抽奖与积分兑换暂未开放，奖品待公布。'}</p>
+            <span class="hero-eyebrow">OH! / LUCKY CAPSULE</span>
+            <h1 id="lottery-title">幸运<span>扭蛋机</span><i aria-hidden="true">!</i></h1>
+            <p>给努力的一天，添一点好运。</p>
           </div>
-          <div class="machine-stage" data-machine-status="${machineStatus}">
-            <div class="machine-halo" aria-hidden="true"></div>
-            <div class="lottery-runtime" data-can-draw="${canDraw ? "true" : "false"}"></div>
+          <div class="machine-stage">
+            <div class="machine-floor" aria-hidden="true"></div>
+            <div class="lottery-runtime" data-can-draw="${canDraw}"></div>
           </div>
+          <div class="stage-caption"><span class="stage-number">NO. 01</span><span class="machine-status" role="status"><i class="${busy ? "is-busy" : ""}"></i>${machineStatus}</span><span class="stage-edition">OH! CLUB</span></div>
         </section>
 
-        <section class="lottery-rail" aria-label="抽奖信息">
-          <div class="rail-heading">
-            <div><span class="rail-eyebrow">LUCKY CAPSULE</span><h2><span>幸运</span>扭蛋机</h2><p>惊喜不断，好运打满</p></div>
-            <span class="preview-badge">${preview ? "服务端交互预览" : "活动服务"}</span>
+        <section class="lottery-rail" aria-label="抽奖信息" aria-busy="${busy}">
+          <div class="rail-heading"><h2 tabindex="-1">我的好运账户</h2><span class="activity-pill" data-ready="${state.apiReady}"><i></i>${status}</span></div>
+          <div class="account-balances">
+            <div class="balance-item token-balance"><span class="card-label">${icon(Ticket)}抽奖代币</span><div><strong class="chance-number">${state.pointsLoaded ? state.lotteryTokens.toLocaleString() : "--"}</strong><span>枚</span></div></div>
+            <div class="balance-item"><span class="card-label">${icon(Coins)}账户积分</span><div><strong class="points-number">${state.pointsLoaded ? state.points.toLocaleString() : "--"}</strong><span>PTS</span></div></div>
           </div>
-
-          ${preview ? `<section class="progress-card">
-            <div class="card-label">消费进度 <span>循环累计</span></div>
-            <div class="progress-value"><strong>${money(state.paidAmount)}</strong><span>/ ${money(state.threshold)}</span></div>
-            <div class="progress-track" aria-label="消费进度"><i style="width:${progress.toFixed(2)}%"></i></div>
-            <div class="progress-meta"><span>${remaining > 0 ? `还差 ${money(remaining)}` : "下一枚代币已达成"}</span><span>按实际支付金额计算</span></div>
-          </section>` : ''}
-
-          <section class="chance-card">
-            <div><span class="card-label">可用抽奖代币</span><strong class="chance-number">${state.lotteryTokens}</strong></div>
-            <div class="chance-detail">${preview ? `<span>消费获得：${Math.max(0, state.lotteryTokens - state.starterTokens)} 枚</span><span>赠送代币：${state.starterTokens} 枚</span><small>赠送代币 30 天有效</small>` : ''}${apiStatus}</div>
-          </section>
-
-          <section class="exchange-card">
-            <div class="exchange-head"><div><span class="card-label">积分兑换</span><strong class="points-number">${state.pointsLoaded ? state.points : '--'}<small> PTS</small></strong></div>${state.tokenExchangeCost > 0 ? `<div class="exchange-rate"><b>${state.tokenExchangeCost}</b><span>积分</span><i>→</i><b>1</b><span>抽奖代币</span></div>` : ''}</div>
-            <button class="exchange-button" type="button" data-exchange ${canExchange ? "" : "disabled"}>兑换 1 枚抽奖代币</button>
-            <small class="exchange-hint">${state.tokenExchangeCost > 0 ? `消耗 ${state.tokenExchangeCost} 积分 · 当前可兑换 ${Math.floor(state.points / state.tokenExchangeCost)} 枚` : '兑换暂未开放'}</small>
-          </section>
-
-          <section class="action-card">
-            <button class="draw-action primary" type="button" data-draw="single" ${canDraw ? "" : "disabled"}><span>按下抽奖</span><small>消耗 1 枚代币</small></button>
-            <button class="draw-action secondary" type="button" data-draw="five" ${canFiveDraw ? "" : "disabled"}><span>五连抽</span><small>消耗 5 枚代币</small></button>
-          </section>
-
-          ${preview ? `<section class="prize-card">
-            <div class="card-label">本期奖池 <span>订阅奖励概率最低</span></div>
-            <div class="prize-grid">
-              <div class="prize-item"><i class="prize-art balance-art">¥</i><span>余额</span><strong>1 / 2 / 3 / 5 元</strong></div>
-              <div class="prize-item"><i class="prize-art subscription-art">日</i><span>活动订阅</span><strong>1 / 3 / 7 天</strong></div>
-              <div class="prize-item"><i class="prize-art coupon-art">%</i><span>充值加赠</span><strong>5%</strong></div>
-              <div class="prize-item muted"><i class="prize-art empty-art">·</i><span>普通结果</span><strong>谢谢参与</strong></div>
+          ${errorNotice ? `<div class="account-notice" role="status">${errorNotice}</div>` : ""}
+          <div class="draw-section">
+            <div class="section-label"><h3>扭一份好运</h3><span>${preview ? "预览代币 · 不计入真实账户" : state.apiReady ? "代币已就绪" : "开放时间待公布"}</span></div>
+            <div class="draw-actions">
+              <button class="draw-action primary" type="button" data-draw="single" data-focus="single" ${canDraw ? "" : "disabled"}><span>${icon(Gift)}${state.phase === "requesting" || state.phase === "rolling" ? "正在抽奖" : "扭一次"}</span><small>1 枚代币</small></button>
+              <button class="draw-action secondary" type="button" data-draw="five" data-focus="five" ${canFiveDraw ? "" : "disabled"}><span>五连扭 ${icon(ArrowRight)}</span><small>5 枚代币</small></button>
             </div>
+          </div>
+          <div class="exchange-section">
+            <div><h3>积分换代币</h3><p>${state.tokenExchangeCost > 0 ? `${state.tokenExchangeCost} 积分 / 枚` : "兑换暂未开放"}</p></div>
+            <button class="exchange-button" type="button" data-exchange data-focus="exchange" ${canExchange ? "" : "disabled"}>${icon(RefreshCw)}${state.phase === "exchanging" ? "兑换中" : "兑换 1 枚"}</button>
+          </div>
+          ${preview ? `<section class="progress-section" aria-label="消费进度">
+            <div class="section-label"><h3>下一枚消费代币</h3><span>${money(state.paidAmount)} / ${money(state.threshold)}</span></div>
+            <progress max="100" value="${progress}" aria-label="消费进度"></progress>
+            <p>${remaining > 0 ? `还差 ${money(remaining)}` : "下一枚代币已达成"}<span>赠送代币 ${state.starterTokens} 枚 · 30 天有效</span></p>
+          </section>` : ""}
+          <section class="prize-section" aria-labelledby="prize-title">
+            <div class="section-label"><h3 id="prize-title">扭蛋里有什么</h3><span>${preview ? "预览奖池" : "敬请期待"}</span></div>
+            ${preview ? `<div class="prize-grid">
+              <div class="prize-item"><i>¥</i><span>余额奖励<strong>1 / 2 / 3 / 5 元</strong></span></div>
+              <div class="prize-item"><i>${icon(Gift)}</i><span>活动订阅<strong>1 / 3 / 7 天</strong></span></div>
+              <div class="prize-item"><i>%</i><span>充值加赠<strong>5%</strong></span></div>
+              <div class="prize-item"><i>${icon(Ticket)}</i><span>普通结果<strong>谢谢参与</strong></span></div>
+            </div><p class="prize-note">连续 3 次未中奖，第 4 次保底普通奖</p>`
+            : `<div class="prize-pending"><img src="${assetBase}assets/lottery-capsule-open-v1.png" alt="" width="84" height="84"><div><strong>惊喜，还在准备中</strong><p>本期奖品即将公布</p></div></div>`}
           </section>
-
-          <div class="rule-strip"><span>每 50 元 1 枚代币</span><span>连续 3 次未中奖，第 4 次保底普通奖</span></div>` : '<div class="rule-strip"><span>奖品待公布</span></div>'}
+          <footer class="rail-footer"><span>薅乐马 · 幸运补给站</span><span>GOOD LUCK!</span></footer>
         </section>
       </main>
       ${renderResultModal()}
     </div>
   `;
-
   bindEvents();
+  const modalOpen = state.phase === "revealed";
+  root.querySelector<HTMLElement>(".lottery-topbar")!.inert = modalOpen;
+  root.querySelector<HTMLElement>(".lottery-layout")!.inert = modalOpen;
+  document.documentElement.classList.toggle("lottery-modal-open", modalOpen);
+  if (modalOpen) root.querySelector<HTMLElement>("#lottery-result-title")?.focus();
+  else if (focusKey) root.querySelector<HTMLElement>(`[data-focus="${CSS.escape(focusKey)}"]`)?.focus();
+  if (!busy) returnFocusKey = undefined;
 }
-
 function bindEvents(): void {
+  root.querySelector<HTMLButtonElement>("[data-retry]")?.addEventListener("click", () => {
+    state.phase = "loading";
+    state.loadError = null;
+    state.apiError = null;
+    render();
+    void loadLotteryState();
+  });
   root.querySelector<HTMLButtonElement>("[data-draw='single']")?.addEventListener("click", () => void draw(1));
   root.querySelector<HTMLButtonElement>("[data-draw='five']")?.addEventListener("click", () => void draw(5));
   root.querySelector<HTMLButtonElement>("[data-exchange]")?.addEventListener("click", () => void exchangePoints(1));
@@ -280,7 +290,7 @@ async function draw(count: number): Promise<void> {
 }
 
 async function exchangePoints(count: number): Promise<void> {
-  if (!state.apiReady || state.phase !== "idle" || state.points < state.tokenExchangeCost) return;
+  if (!state.apiReady || state.phase !== "idle" || state.tokenExchangeCost <= 0 || state.points < state.tokenExchangeCost) return;
   state.phase = "exchanging";
   state.apiError = null;
   render();
@@ -297,7 +307,7 @@ async function exchangePoints(count: number): Promise<void> {
     });
     const payload = await response.json().catch(() => null) as { success?: boolean; data?: LotteryStateResponse; message?: string; code?: string } | null;
     if (!response.ok || !payload?.success || !payload.data) {
-      if (payload?.code === "insufficient_points") throw new Error("积分不足，先去活动中心签到吧");
+      if (payload?.code === "insufficient_points") throw new Error("账户积分不足，暂时无法兑换");
       throw new Error(payload?.message || `积分兑换请求失败（${response.status}）`);
     }
     const data = payload.data;
@@ -327,16 +337,23 @@ function dismissResult(): void {
   state.grantStatus = null;
   state.phase = "idle";
   render();
+  const drawButton = root.querySelector<HTMLButtonElement>("[data-draw='single']");
+  if (drawButton && !drawButton.disabled) drawButton.focus();
+  else root.querySelector<HTMLElement>(".rail-heading h2")?.focus();
 }
 
 async function loadLotteryState(): Promise<void> {
+  state.loadError = null;
   const headers: Record<string, string> = previewRequested ? {} : browserSessionHeaders();
   if (previewRequested) headers["X-Lottery-Preview"] = "1";
   try {
     const response = await fetch(`${lotteryApiBase}/state${previewRequested ? "?preview=1" : ""}`, { headers, credentials: "include", cache: "no-store" });
     const payload = await response.json().catch(() => null) as { success?: boolean; data?: LotteryStateResponse; message?: string } | null;
     if (!response.ok || !payload?.success || !payload.data) {
-      if (response.status === 401) throw new Error("登录后可查看积分");
+      if (response.status === 401) {
+        state.loadError = "login";
+        throw new Error("登录后可查看积分");
+      }
       throw new Error(payload?.message || `活动服务请求失败（${response.status}）`);
     }
     const data = payload.data;
@@ -354,6 +371,7 @@ async function loadLotteryState(): Promise<void> {
   } catch (error) {
     state.apiReady = false;
     preview = false;
+    state.loadError ??= "unavailable";
     state.apiError = error instanceof Error ? error.message : "活动服务暂时不可用";
     state.phase = "idle";
   }
@@ -362,6 +380,18 @@ async function loadLotteryState(): Promise<void> {
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.phase === "revealed") dismissResult();
+  if (event.key === "Tab" && state.phase === "revealed") {
+    const controls = root.querySelectorAll<HTMLButtonElement>(".lottery-result-modal button");
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && (document.activeElement === first || document.activeElement?.id === "lottery-result-title")) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  }
 });
 
 render();

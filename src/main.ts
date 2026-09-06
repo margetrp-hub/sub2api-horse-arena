@@ -5,6 +5,8 @@ import { GameApp } from "./game/GameApp";
 import { renderRankingPanel } from "./ui/RankingPanel";
 import { Toast } from "./ui/toast";
 import type { Player } from "./types";
+import { PersonalWorkstation } from "./practice/PersonalWorkstation";
+import "./ui/office.css";
 
 const appRoot = document.querySelector<HTMLDivElement>("#app");
 
@@ -15,6 +17,7 @@ if (!appRoot) {
 appRoot.innerHTML = `
   <main class="game-shell" data-ranking-period="week" aria-label="OH！薅乐马 Pixi 小游戏">
     <section class="playfield" aria-label="网吧游戏画面">
+      <div class="office-scene-heading"><strong>OH! 薅乐马</strong><span>公共办公室</span></div>
       <div id="gameRoot" class="game-root"></div>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </section>
@@ -66,6 +69,7 @@ let selected = idlePlayers[0];
 let currentPlayers: Player[] = [];
 let rankingState: "loading" | "loaded" | "stale" | "unavailable" = "loading";
 let rankingSnapshot: RankingSnapshot | undefined;
+let rankingLoading = false;
 
 const game = new GameApp(gameMount, {
   players: idlePlayers,
@@ -75,6 +79,12 @@ const game = new GameApp(gameMount, {
       ? `牛老板连击 x${hits} · 墨镜都歪了`
       : `你揍了牛老板 ${hits} 下 · 他记住你了`,
   ),
+});
+const personalWorkstation = new PersonalWorkstation(gameMount.parentElement!, {
+  onVisibilityChange: (visible) => {
+    gameMount.hidden = visible;
+    game.setPaused(visible);
+  },
 });
 
 function selectPlayer(player: Player, syncGame = true): void {
@@ -87,7 +97,11 @@ function renderPanel(): void {
   renderRankingPanel(panelRoot, {
     players: currentPlayers,
     selected,
-    onSelect: (player) => selectPlayer(player),
+    onSelect: (player) => {
+      personalWorkstation.showOffice();
+      selectPlayer(player);
+    },
+    onRefresh: () => void loadRankingSnapshot(),
     lottery: lotteryState,
     onLotteryOpen: () => {
       const lotteryUrl = new URL(`${import.meta.env.BASE_URL}lottery.html`, window.location.origin);
@@ -126,10 +140,15 @@ function playerKey(player: Player): string {
 renderPanel();
 
 async function loadRankingSnapshot(): Promise<void> {
+  if (rankingLoading) return;
+  rankingLoading = true;
+  if (!rankingSnapshot) rankingState = "loading";
+  renderPanel();
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 12000);
   try {
     rankingSnapshot = await fetchRankingSnapshot(controller.signal);
+    personalWorkstation.setIdentity(rankingSnapshot.currentUser);
     currentPlayers = rankingSnapshot.players;
     rankingState = "loaded";
     if (currentPlayers.length > 0) {
@@ -143,11 +162,13 @@ async function loadRankingSnapshot(): Promise<void> {
   } catch {
     rankingState = rankingSnapshot ? "stale" : "unavailable";
     if (!rankingSnapshot) {
+      personalWorkstation.setIdentity(null);
       currentPlayers = [];
       game.setPlayers(idlePlayers);
     }
     renderPanel();
   } finally {
+    rankingLoading = false;
     window.clearTimeout(timeout);
   }
 }
