@@ -57,14 +57,17 @@ jobs:
           docker cp "$container:/usr/share/nginx/html/." release/dist/
           tar -czf release/dist.tar.gz -C release dist
           image_id=$(docker image inspect "$image" --format '{{.Id}}')
+          docker tag "$image" "ghcr.io/margetrp-hub/oh-haolema-web:sha-$GITHUB_SHA"
+          docker save -o release/image.tar "ghcr.io/margetrp-hub/oh-haolema-web:sha-$GITHUB_SHA"
           jq -n --arg imageRef "$image" --arg imageId "$image_id" --arg revision "$GITHUB_SHA" '{imageRef:$imageRef,imageId:$imageId,revision:$revision}' > release/registry.json
-          (cd release && sha256sum dist.tar.gz > checksums.txt)
+          (cd release && sha256sum dist.tar.gz image.tar > checksums.txt)
       - name: Upload deployment artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: game-frontend-${{ github.sha }}
           path: |
             release/dist.tar.gz
+            release/image.tar
             release/registry.json
             release/checksums.txt
           retention-days: 7
