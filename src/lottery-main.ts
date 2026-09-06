@@ -45,7 +45,8 @@ const assetBase = import.meta.env.BASE_URL;
 const lotteryApiBase = "/api/lottery";
 
 const params = new URLSearchParams(window.location.search);
-const preview = params.get("lotteryPreview") === "1";
+const previewRequested = params.get("lotteryPreview") === "1";
+let preview = false;
 const state = {
   phase: "loading" as "loading" | "idle" | "requesting" | "rolling" | "revealed" | "exchanging",
   paidAmount: 0,
@@ -54,9 +55,9 @@ const state = {
   remainingDraws: 0,
   starterTokens: 0,
   starterDraws: 0,
-  points: preview ? 1280 : 0,
+  points: 0,
   pointsLoaded: false,
-  tokenExchangeCost: preview ? 100 : 0,
+  tokenExchangeCost: 0,
   missStreak: 0,
   pendingResults: null as Prize[] | null,
   revealedResults: null as Prize[] | null,
@@ -329,10 +330,10 @@ function dismissResult(): void {
 }
 
 async function loadLotteryState(): Promise<void> {
-  const headers: Record<string, string> = preview ? {} : browserSessionHeaders();
-  if (preview) headers["X-Lottery-Preview"] = "1";
+  const headers: Record<string, string> = previewRequested ? {} : browserSessionHeaders();
+  if (previewRequested) headers["X-Lottery-Preview"] = "1";
   try {
-    const response = await fetch(`${lotteryApiBase}/state${preview ? "?preview=1" : ""}`, { headers, credentials: "include", cache: "no-store" });
+    const response = await fetch(`${lotteryApiBase}/state${previewRequested ? "?preview=1" : ""}`, { headers, credentials: "include", cache: "no-store" });
     const payload = await response.json().catch(() => null) as { success?: boolean; data?: LotteryStateResponse; message?: string } | null;
     if (!response.ok || !payload?.success || !payload.data) {
       if (response.status === 401) throw new Error("登录后可查看积分");
@@ -340,6 +341,7 @@ async function loadLotteryState(): Promise<void> {
     }
     const data = payload.data;
     if (!Number.isSafeInteger(data.points)) throw new Error("积分数据无效，请稍后重试");
+    preview = previewRequested && data.available !== false;
     Object.assign(state, data);
     state.pointsLoaded = true;
     if (!Number.isFinite(Number(data.lotteryTokens))) state.lotteryTokens = Number(data.remainingDraws) || 0;
@@ -351,6 +353,7 @@ async function loadLotteryState(): Promise<void> {
     state.phase = "idle";
   } catch (error) {
     state.apiReady = false;
+    preview = false;
     state.apiError = error instanceof Error ? error.message : "活动服务暂时不可用";
     state.phase = "idle";
   }
