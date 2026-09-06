@@ -1,0 +1,71 @@
+name: Publish game frontend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-game-frontend
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Verify gameplay and API contracts
+        run: docker run --rm -v "$PWD:/app" -w /app node:22-alpine sh -c 'npm ci && npm run test:practice && npm run test:api'
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+      - name: Build and publish
+        id: image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: deploy/game-frontend.Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/margetrp-hub/oh-haolema-web:sha-${{ github.sha }}
+          build-args: |
+            GAME_BASE_PATH=/game/
+            GAME_SOURCE=sub2api
+            GAME_RANKING_PATH=/game-api/ranking
+            SOURCE_REVISION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Export verified static files and image identity
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/margetrp-hub/oh-haolema-web@$DIGEST"
+          docker pull "$image"
+          mkdir -p release/dist
+          container=$(docker create "$image")
+          trap 'docker rm "$container" >/dev/null' EXIT
+          docker cp "$container:/usr/share/nginx/html/." release/dist/
+          tar -czf release/dist.tar.gz -C release dist
+          image_id=$(docker image inspect "$image" --format '{{.Id}}')
+          jq -n --arg imageRef "$image" --arg imageId "$image_id" --arg revision "$GITHUB_SHA" '{imageRef:$imageRef,imageId:$imageId,revision:$revision}' > release/registry.json
+          (cd release && sha256sum dist.tar.gz > checksums.txt)
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: game-frontend-${{ github.sha }}
+          path: |
+            release/dist.tar.gz
+            release/registry.json
+            release/checksums.txt
+          retention-days: 7
+          if-no-files-found: error

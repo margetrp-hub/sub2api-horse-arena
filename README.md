@@ -60,6 +60,8 @@ GET /api/ranking?period=week
 
 ## 测试与构建
 
+`Publish game frontend` 工作流按当前 `main` 提交手动发布独立 GHCR 前端镜像，输出不可变 digest 和静态文件校验包；工作流不自动部署服务器。镜像默认连接 Sub2API 的 `/game-api/ranking`，NewAPI 静态部署须保留该站现有 `runtime-config.js`。
+
 ```bash
 npm run test:practice
 npm run test:api
