@@ -335,6 +335,7 @@ async function loadLotteryState(): Promise<void> {
     const response = await fetch(`${lotteryApiBase}/state${preview ? "?preview=1" : ""}`, { headers, credentials: "include", cache: "no-store" });
     const payload = await response.json().catch(() => null) as { success?: boolean; data?: LotteryStateResponse; message?: string } | null;
     if (!response.ok || !payload?.success || !payload.data) {
+      if (response.status === 401) throw new Error("登录后可查看积分");
       throw new Error(payload?.message || `活动服务请求失败（${response.status}）`);
     }
     const data = payload.data;
