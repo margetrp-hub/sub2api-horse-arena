@@ -65,10 +65,11 @@ export class PointsAccount {
     this.render();
     const controller = new AbortController();
     this.controller = controller;
-    const timeout = window.setTimeout(() => controller.abort(), 12000);
+    let timeout: number | undefined;
     try {
       const headers = await authenticatedSessionHeaders();
       if (generation !== this.generation) return;
+      timeout = window.setTimeout(() => controller.abort(), 20000);
       const response = await fetch(`/api/points/${action}?limit=20&offset=${offset}`, {
         method, credentials: "include", cache: "no-store", signal: controller.signal,
         headers: { ...headers, ...(method === "POST" ? { "Content-Type": "application/json" } : {}) },
