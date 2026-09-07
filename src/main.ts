@@ -7,6 +7,7 @@ import { Toast } from "./ui/toast";
 import type { Player } from "./types";
 import { PersonalWorkstation } from "./practice/PersonalWorkstation";
 import "./ui/office.css";
+import { PointsAccount } from "./ui/PointsAccount";
 
 const appRoot = document.querySelector<HTMLDivElement>("#app");
 
@@ -46,24 +47,7 @@ const lotteryState = {
   availableTokens: lotteryPreview ? 2 : 0,
   starterTokens: lotteryPreview ? 2 : 0,
 };
-const PERSONAL_ACTIVITY_KEY = "oh-haolema:personal-activity";
-function currentLocalDay(): string {
-  const day = new Date();
-  return [day.getFullYear(), String(day.getMonth() + 1).padStart(2, "0"), String(day.getDate()).padStart(2, "0")].join("-");
-}
-function loadPersonalActivity(): { points: number; checkedDate: string } {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(PERSONAL_ACTIVITY_KEY) ?? "{}") as { points?: unknown; checkedDate?: unknown };
-    const points = Number(saved.points);
-    return {
-      points: Number.isFinite(points) ? Math.max(0, Math.floor(points)) : 1280,
-      checkedDate: typeof saved.checkedDate === "string" ? saved.checkedDate : "",
-    };
-  } catch {
-    return { points: 1280, checkedDate: "" };
-  }
-}
-const personalActivity = loadPersonalActivity();
+const pointsAccount = new PointsAccount(true);
 const idlePlayers = emptyPlayers();
 let selected = idlePlayers[0];
 let currentPlayers: Player[] = [];
@@ -108,20 +92,7 @@ function renderPanel(): void {
       lotteryUrl.searchParams.set("lotteryPreview", lotteryPreview ? "1" : "0");
       window.location.assign(lotteryUrl.toString());
     },
-    personalPoints: personalActivity.points,
-    checkedIn: personalActivity.checkedDate === currentLocalDay(),
-    onCheckin: () => {
-      if (personalActivity.checkedDate === currentLocalDay()) return;
-      personalActivity.points += 10;
-      personalActivity.checkedDate = currentLocalDay();
-      try {
-        window.localStorage.setItem(PERSONAL_ACTIVITY_KEY, JSON.stringify(personalActivity));
-      } catch {
-        // Keep the current session usable when browser storage is unavailable.
-      }
-      renderPanel();
-      toast.show("每日签到成功 · 积分 +10");
-    },
+    pointsElement: pointsAccount.element,
     currentUser: rankingSnapshot?.currentUser,
     source: rankingState,
     totalTokens: rankingSnapshot?.totalTokens,

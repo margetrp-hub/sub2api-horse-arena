@@ -1,0 +1,38 @@
+.points-account, .points-dialog { --points-ink: #20382e; --points-green: #276852; color: var(--points-ink); font-family: inherit; letter-spacing: 0; }
+.points-account { --points-ink: #edf3e3; --points-green: #c5ec77; padding: 18px 0; border-block: 1px solid #3d4b40; }
+.points-heading, .points-summary, .points-dialog header, .points-dialog footer, .points-dialog nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.points-heading > span { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; }
+.points-account svg, .points-dialog svg { width: 17px; height: 17px; flex: 0 0 17px; }
+.points-summary { margin-top: 6px; flex-wrap: wrap; }
+.points-summary > strong { font-size: 34px; line-height: 1.2; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.points-summary small { font-size: 11px; font-weight: 500; margin-left: 8px; }
+.points-account button, .points-account a, .points-dialog button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 8px 12px; border: 1px solid #9cb6a3; border-radius: 5px; background: #276852; color: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; }
+.points-account button:disabled, .points-dialog button:disabled { background: #e1e8df; color: #647568; border-color: #c4d0c2; cursor: default; }
+.points-account .points-icon, .points-dialog .points-icon { width: 38px; height: 38px; min-width: 38px; padding: 0; background: transparent; color: var(--points-green); }
+.points-account button:focus-visible, .points-account a:focus-visible, .points-dialog button:focus-visible { outline: 3px solid #d87756; outline-offset: 3px; }
+.points-note { min-height: 16px; margin: 10px 0 0; font-size: 11px; line-height: 1.5; color: #5b6b60; overflow-wrap: anywhere; }
+.points-compact { padding: 9px 0 0; margin-top: 8px; border-bottom: 0; }
+.points-compact .points-summary > strong { font-size: 24px; }
+.points-compact .points-heading .points-icon { width: 30px; height: 30px; min-width: 30px; min-height: 30px; }
+.points-dialog { width: min(520px, calc(100vw - 32px)); max-height: min(680px, calc(100dvh - 40px)); box-sizing: border-box; padding: 0; border: 1px solid #b8c5b6; border-radius: 8px; background: #f9fcf7; box-shadow: 0 18px 70px #15291c40; }
+.points-dialog::backdrop { background: #11261bb3; }
+.points-dialog[open] { display: flex; flex-direction: column; }
+.points-dialog header { padding: 20px 22px; border-bottom: 1px solid #d6dfd2; flex-shrink: 0; }
+.points-dialog h2 { margin: 0; font-size: 18px; line-height: 1.4; letter-spacing: 0; }
+.points-dialog header p { margin: 5px 0 0; font-size: 12px; color: #5b6b60; }
+.points-ledger { min-height: 150px; overflow-y: auto; padding: 0 22px; }
+.points-ledger ol { list-style: none; padding: 0; margin: 0; }
+.points-ledger li { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 15px 0; border-bottom: 1px solid #e0e6dc; }
+.points-ledger li strong { display: block; font-size: 13px; }
+.points-ledger time { display: block; margin-top: 5px; font-size: 11px; color: #6b766c; }
+.points-ledger li b { font-size: 17px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.points-credit { color: #247451; }
+.points-account button, .points-account a { background: #c5ec77; color: #223323; border-color: #a7c868; }
+.points-account button:disabled { background: #29372e; color: #aec49e; border-color: #465b42; }
+.points-account .points-icon { background: transparent; color: #c5ec77; border-color: #52654c; }
+.points-account .points-icon:disabled { color: #7f9675; border-color: #3d4b40; }
+.points-account .points-note { color: #a8b69f; }
+.points-empty { padding: 36px 0; text-align: center; font-size: 13px; color: #667268; }
+.points-dialog footer { padding: 14px 22px; border-top: 1px solid #d6dfd2; flex-wrap: wrap; flex-shrink: 0; font-size: 11px; }
+.points-dialog nav { gap: 10px; }
+@media (max-width: 420px) { .points-dialog header, .points-dialog footer { padding: 16px; } .points-ledger { padding-inline: 16px; } .points-summary > strong { font-size: 30px; } }

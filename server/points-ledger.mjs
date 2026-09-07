@@ -1,3 +1,5 @@
+import { createSitePointsService } from "./site-points.mjs";
+
 function unavailable(message = "抽奖与积分兑换暂未开放", code = "lottery_not_open") {
   return Object.assign(new Error(message), { status: 503, code });
 }
@@ -5,6 +7,16 @@ function unavailable(message = "抽奖与积分兑换暂未开放", code = "lott
 export function createPointsLotteryService(config, fetchImpl = fetch) {
   return {
     async getState(userId) {
+      if (config.pointsSiteToken) {
+        const { data } = await createSitePointsService(config, fetchImpl).request(userId);
+        return {
+          points: data.balance, accountId: data.accountId,
+          paidAmount: 0, threshold: 50, starterTokens: 0, starterDraws: 0,
+          lotteryTokens: 0, remainingDraws: 0, tokenExchangeCost: 0, missStreak: 0,
+          available: false, reason: "抽奖与积分兑换暂未开放",
+          animation: { key: "pixi-runtime", src: "runtime" },
+        };
+      }
       if (!config.pointsBaseUrl || !config.pointsReadToken) {
         throw unavailable("积分服务尚未接通", "points_not_configured");
       }

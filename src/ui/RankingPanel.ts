@@ -2,7 +2,7 @@ import type { CurrentUserStatus } from "../api/ranking";
 import { formatTokens } from "../data/players";
 import { assetPath } from "../game/constants";
 import type { Player, RankingSource } from "../types";
-import { ArrowRight, Check, CircleCheck, RefreshCw, Trophy, Unplug, UserRound } from "lucide";
+import { ArrowRight, RefreshCw, Trophy, Unplug, UserRound } from "lucide";
 import { icon } from "./icons";
 
 type RankingPanelOptions = {
@@ -11,9 +11,7 @@ type RankingPanelOptions = {
   onSelect: (player: Player) => void;
   onRefresh?: () => void;
   onLotteryOpen?: () => void;
-  onCheckin?: () => void;
-  personalPoints?: number;
-  checkedIn?: boolean;
+  pointsElement?: HTMLElement;
   lottery?: {
     preview: boolean;
     paidAmount: number;
@@ -86,10 +84,10 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
         </li>`).join("") : `
         <li class="ranking-empty board-empty">${icon(options.source === "unavailable" ? Unplug : Trophy)}<strong>${emptyTitle}</strong><span>${emptyDetail}</span>${options.source === "unavailable" ? '<button type="button" class="board-retry" data-focus="retry">重新连接</button>' : ""}</li>`}
     </ol>
-    <section class="board-personal" aria-label="我的排名与本地签到">
+    <section class="board-personal" aria-label="我的排名与积分">
       <div class="board-identity">${icon(UserRound)}<div><strong>${escapeHtml(current?.name ?? "访客工位")}</strong><span>${escapeHtml(position)}</span></div>${current ? `<b>${formatTokens(current.tokens)}</b>` : ""}</div>
       ${gap ? `<p class="board-gap">${escapeHtml(gap)}</p>` : ""}
-      <div class="board-checkin"><span>本机积分 <b>${Math.max(0, Math.floor(options.personalPoints ?? 1280))}</b></span><button class="checkin-button" data-focus="checkin" type="button" ${options.checkedIn ? "disabled" : ""}>${icon(options.checkedIn ? Check : CircleCheck)}${options.checkedIn ? "今日已签到" : "签到 +10"}</button></div>
+      <div data-points-mount></div>
     </section>
     <section class="board-activity" aria-labelledby="activity-entry-title">
       <img src="${assetPath("lottery-capsule-machine.png")}" alt="" width="52" height="68">
@@ -108,7 +106,7 @@ export function renderRankingPanel(root: HTMLElement, options: RankingPanelOptio
   root.querySelectorAll<HTMLButtonElement>(".board-refresh, .board-retry").forEach((button) =>
     button.addEventListener("click", () => options.onRefresh?.()));
   root.querySelector<HTMLButtonElement>(".lottery-open-button")?.addEventListener("click", () => options.onLotteryOpen?.());
-  root.querySelector<HTMLButtonElement>(".checkin-button")?.addEventListener("click", () => options.onCheckin?.());
+  if (options.pointsElement) root.querySelector("[data-points-mount]")?.replaceWith(options.pointsElement);
   const list = root.querySelector(".ranking");
   if (list) list.scrollTop = scrollTop;
   if (active) {

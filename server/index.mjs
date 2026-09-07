@@ -11,6 +11,7 @@ import {
 } from "./normalize.mjs";
 import { createLotteryService } from "./lottery.mjs";
 import { createPointsLotteryService } from "./points-ledger.mjs";
+import { createSitePointsService } from "./site-points.mjs";
 
 const DEFAULT_PORT = 8788;
 const DEFAULT_TIMEOUT_MS = 10000;
@@ -39,6 +40,7 @@ export function getConfig(env = process.env) {
     lotteryPreviewEnabled: env.LOTTERY_PREVIEW_ENABLED === "1",
     pointsBaseUrl: String(env.ERDAI_POINTS_BASE_URL || "").trim(),
     pointsReadToken: String(env.ERDAI_POINTS_READ_TOKEN || "").trim(),
+    pointsSiteToken: String(env.ERDAI_POINTS_SITE_TOKEN || "").trim(),
     pointsIdentityInstance: String(env.ERDAI_POINTS_IDENTITY_INSTANCE || "").trim(),
     baseUrl: trimTrailingSlash(env.NEWAPI_BASE_URL || "https://api.yhoo.lol"),
     accessToken: String(env.NEWAPI_ACCESS_TOKEN || "").trim(),
@@ -129,6 +131,7 @@ async function requestJson(url, headers, timeoutMs) {
   try {
     const response = await fetch(url, {
       method: "GET",
+      redirect: "error",
       headers: { Accept: "application/json", ...headers },
       signal: controller.signal,
     });
@@ -140,7 +143,7 @@ async function requestJson(url, headers, timeoutMs) {
       throw new Error(`upstream returned non-JSON (${response.status})`);
     }
     if (!response.ok) {
-      throw new Error(`upstream request failed (${response.status})`);
+      throw Object.assign(new Error(`upstream request failed (${response.status})`), { status: response.status });
     }
     return payload;
   } finally {
@@ -174,8 +177,8 @@ export async function fetchCurrentSub2ApiUser(config, authorization) {
     config.timeoutMs,
   );
   const data = payload?.code === 0 || payload?.success === true ? payload.data : null;
-  const id = Math.trunc(Number(data?.id));
-  if (!Number.isFinite(id) || id <= 0) return null;
+  const id = Number(data?.id);
+  if (!Number.isSafeInteger(id) || id <= 0) return null;
   return {
     id,
     name: String(data?.email ?? data?.username ?? data?.name ?? "").trim(),
@@ -190,13 +193,14 @@ export async function fetchCurrentNewApiUser(
 ) {
   if (config.source !== "newapi") return null;
   const userId = String(newApiUser ?? "").trim();
-  if (!/^\d+$/.test(userId)) return null;
+  if (userId && !/^[1-9]\d*$/.test(userId)) return null;
 
-  const headers = { "New-Api-User": userId };
+  const headers = userId ? { "New-Api-User": userId } : {};
   const browserCookie = String(cookie ?? "").trim();
   if (browserCookie) headers.Cookie = browserCookie;
   const browserAuthorization = String(authorization ?? "").trim();
   if (browserAuthorization) headers.Authorization = browserAuthorization;
+  if (!browserCookie && !/^Bearer\s+\S+$/i.test(browserAuthorization)) return null;
 
   const payload = await requestJson(
     new URL(`${config.baseUrl}/api/user/self`),
@@ -205,9 +209,9 @@ export async function fetchCurrentNewApiUser(
   );
   const data = payload?.success === true || payload?.code === 0
     ? payload.data
-    : payload?.data ?? null;
-  const id = Math.trunc(Number(data?.id ?? data?.user_id ?? data?.user?.id));
-  if (!Number.isFinite(id) || id <= 0) return null;
+    : null;
+  const id = Number(data?.id ?? data?.user_id ?? data?.user?.id);
+  if (!Number.isSafeInteger(id) || id <= 0 || (userId && String(id) !== userId)) return null;
   return {
     id,
     name: String(
@@ -358,6 +362,7 @@ export function createApp(
   fetchData = fetchUsageData,
   resolveUser = resolveCurrentUser,
   lottery,
+  points = createSitePointsService(config),
 ) {
   const getRanking = createRankingService(config, fetchData);
   const previewLottery = lottery?.previewOnly ? lottery : createLotteryService();
@@ -397,6 +402,45 @@ export function createApp(
         source: config.source,
         configured,
       });
+      return;
+    }
+
+    if (url.pathname.startsWith("/api/points/")) {
+      try {
+        const action = url.pathname.slice("/api/points/".length);
+        if (!(action === "account" && ["GET", "POST"].includes(req.method)) && !(action === "checkin" && req.method === "POST")) {
+          jsonResponse(res, 404, { success: false, code: "not_found" });
+          return;
+        }
+        if (req.method === "POST") {
+          if (!config.corsOrigins.includes(req.headers.origin) || req.headers["sec-fetch-site"] === "cross-site" ||
+              String(req.headers["content-type"] || "").split(";")[0].trim() !== "application/json") {
+            jsonResponse(res, 403, { success: false, code: "invalid_origin", message: "请从本站页面操作" });
+            return;
+          }
+          const body = await readJsonBody(req, 2048);
+          if (!body || Array.isArray(body) || typeof body !== "object" || Object.keys(body).length) {
+            jsonResponse(res, 400, { success: false, code: "invalid_body", message: "积分请求无效" });
+            return;
+          }
+        }
+        let user;
+        try { user = await resolveUser(config, req.headers.authorization, req.headers.cookie, req.headers["new-api-user"]); }
+        catch (error) {
+          const expired = error?.status === 401 || error?.status === 403;
+          jsonResponse(res, expired ? 401 : 503, { success: false, code: expired ? "unauthorized" : "auth_unavailable", message: expired ? "请重新登录" : "登录状态暂时无法确认，请稍后重试" });
+          return;
+        }
+        if (!user || user.lotteryPreview) {
+          jsonResponse(res, 401, { success: false, code: "unauthorized", message: "登录后可查看积分" });
+          return;
+        }
+        const page = { limit: Number(url.searchParams.get("limit") ?? 20), offset: Number(url.searchParams.get("offset") ?? 0) };
+        const result = await points.request(user.id, action, req.method, page);
+        jsonResponse(res, 200, { success: true, ...result });
+      } catch (error) {
+        jsonResponse(res, Number(error?.status) || 503, { success: false, code: error?.code || "points_unavailable", message: error?.message || "积分服务暂时不可用" });
+      }
       return;
     }
 

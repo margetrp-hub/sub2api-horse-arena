@@ -141,6 +141,7 @@ function isSelf(row: RankingRow, currentUserId: RankingRow["user_id"]): boolean 
 }
 
 export function browserSessionHeaders(): Record<string, string> {
+  if (newApiSession !== undefined && runtimeConfig().source === "newapi") return { Accept: "application/json", ...newApiSession };
   const headers: Record<string, string> = { Accept: "application/json" };
   const authorization = browserAuthorization();
   if (authorization) headers.Authorization = authorization;
@@ -149,11 +150,47 @@ export function browserSessionHeaders(): Record<string, string> {
   return headers;
 }
 
+let newApiSession: Record<string, string> | undefined;
+let sessionRefresh: Promise<Record<string, string>> | undefined;
+
+export async function authenticatedSessionHeaders(): Promise<Record<string, string>> {
+  if (runtimeConfig().source !== "newapi") return browserSessionHeaders();
+  if (sessionRefresh) return sessionRefresh;
+  const refresh = async (): Promise<Record<string, string>> => {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const response = await fetch("/api/user/auth/refresh", {
+        method: "POST", credentials: "include", cache: "no-store", redirect: "error",
+        signal: AbortSignal.timeout(10000), headers: { Accept: "application/json" },
+      });
+      if (response.status === 404 || response.status === 405) { newApiSession = undefined; return browserSessionHeaders(); }
+      const payload = await response.json().catch(() => null);
+      if (response.status === 409 && payload?.code === "AUTH_REFRESH_RACE" && attempt < 3) {
+        await new Promise((resolve) => window.setTimeout(resolve, [80, 200, 500][attempt]));
+        continue;
+      }
+      if (response.status === 401 || response.status === 403) { newApiSession = {}; return browserSessionHeaders(); }
+      const bundle = payload?.data;
+      if (!response.ok || payload?.success !== true || typeof bundle?.access_token !== "string" || !bundle.access_token ||
+          !Number.isSafeInteger(bundle?.user?.id) || bundle.user.id < 1) {
+        newApiSession = {};
+        throw new Error("登录状态暂时无法确认");
+      }
+      newApiSession = { Authorization: `Bearer ${bundle.access_token}`, "New-Api-User": String(bundle.user.id) };
+      return browserSessionHeaders();
+    }
+    throw new Error("登录状态暂时无法确认");
+  };
+  sessionRefresh = (async () => navigator.locks
+    ? await navigator.locks.request("new-api:auth-refresh", { mode: "exclusive" }, refresh)
+    : await refresh())().finally(() => { sessionRefresh = undefined; });
+  return sessionRefresh;
+}
+
 export async function fetchRankingSnapshot(signal?: AbortSignal): Promise<RankingSnapshot> {
   const url = endpoint();
   if (!url) throw new Error("Ranking endpoint is not configured");
 
-  const headers = browserSessionHeaders();
+  const headers = await authenticatedSessionHeaders();
   const response = await fetch(url, {
     headers,
     credentials: "include",

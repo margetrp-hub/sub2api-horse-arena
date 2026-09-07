@@ -3,6 +3,7 @@ import { LotteryMachineRuntime } from "./lottery-machine-runtime";
 import { browserSessionHeaders } from "./api/ranking";
 import { ArrowLeft, ArrowRight, CircleHelp, Coins, Gift, LockKeyhole, RefreshCw, Ticket, X } from "lucide";
 import { icon } from "./ui/icons";
+import { PointsAccount } from "./ui/PointsAccount";
 
 type PrizeKind = "empty" | "balance" | "coupon" | "subscription";
 
@@ -72,6 +73,7 @@ const state = {
 
 let activeRuntime: LotteryMachineRuntime | null = null;
 let returnFocusKey: string | undefined;
+const pointsAccount = new PointsAccount();
 
 function money(value: number): string {
   return `¥${value.toFixed(2)}`;
@@ -136,7 +138,7 @@ function render(): void {
     loading: "正在连接", requesting: "正在确认抽奖", rolling: "好运正在出仓",
     revealed: "扭蛋已揭晓", exchanging: "正在兑换代币", idle: state.apiReady ? "等待下一份好运" : "期待下一次开启",
   })[state.phase];
-  const status = state.phase === "loading" ? "连接中" : preview ? "活动预览" : state.apiReady ? "活动进行中" : "暂未开放";
+  const status = state.phase === "loading" ? "连接中" : preview ? "活动预览" : state.apiReady ? "活动进行中" : "奖池筹备中";
   const errorNotice = state.loadError === "login"
     ? `<div class="notice-copy">${icon(LockKeyhole)}<div><strong>登录后查看账户</strong><p>积分与抽奖代币将在这里显示</p></div></div><a class="notice-link" href="${window.OH_HAOLEMA_RUNTIME?.source === "sub2api" ? "/login" : "/sign-in"}">登录 ${icon(ArrowRight)}</a>`
     : state.loadError === "unavailable"
@@ -170,11 +172,11 @@ function render(): void {
 
         <section class="lottery-rail" aria-label="抽奖信息" aria-busy="${busy}">
           <div class="rail-heading"><h2 tabindex="-1">我的好运账户</h2><span class="activity-pill" data-ready="${state.apiReady}"><i></i>${status}</span></div>
-          <div class="account-balances">
+          ${preview ? `<div class="account-balances">
             <div class="balance-item token-balance"><span class="card-label">${icon(Ticket)}抽奖代币</span><div><strong class="chance-number">${state.pointsLoaded ? state.lotteryTokens.toLocaleString() : "--"}</strong><span>枚</span></div></div>
             <div class="balance-item"><span class="card-label">${icon(Coins)}账户积分</span><div><strong class="points-number">${state.pointsLoaded ? state.points.toLocaleString() : "--"}</strong><span>PTS</span></div></div>
-          </div>
-          ${errorNotice ? `<div class="account-notice" role="status">${errorNotice}</div>` : ""}
+          </div>` : '<div data-points-mount></div>'}
+          ${preview && errorNotice ? `<div class="account-notice" role="status">${errorNotice}</div>` : ""}
           <div class="draw-section">
             <div class="section-label"><h3>扭一份好运</h3><span>${preview ? "预览代币 · 不计入真实账户" : state.apiReady ? "代币已就绪" : "开放时间待公布"}</span></div>
             <div class="draw-actions">
@@ -208,6 +210,7 @@ function render(): void {
     </div>
   `;
   if (retainedMount) root.querySelector(".lottery-runtime")?.replaceWith(retainedMount);
+  root.querySelector("[data-points-mount]")?.replaceWith(pointsAccount.element);
   bindEvents();
   activeRuntime?.setLocked(busy || state.phase === "revealed");
   const modalOpen = state.phase === "revealed";
@@ -343,6 +346,12 @@ function dismissResult(): void {
 }
 
 async function loadLotteryState(): Promise<void> {
+  if (!previewRequested) {
+    state.phase = "idle";
+    state.apiReady = false;
+    render();
+    return;
+  }
   state.loadError = null;
   const headers: Record<string, string> = previewRequested ? {} : browserSessionHeaders();
   if (previewRequested) headers["X-Lottery-Preview"] = "1";
@@ -397,4 +406,4 @@ window.addEventListener("keydown", (event) => {
 render();
 void loadLotteryState();
 
-if (import.meta.hot) import.meta.hot.dispose(() => activeRuntime?.destroy());
+if (import.meta.hot) import.meta.hot.dispose(() => { activeRuntime?.destroy(); pointsAccount.destroy(); });

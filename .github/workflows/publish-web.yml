@@ -61,6 +61,16 @@ jobs:
           docker save -o release/image.tar "ghcr.io/margetrp-hub/oh-haolema-web:sha-$GITHUB_SHA"
           jq -n --arg imageRef "$image" --arg imageId "$image_id" --arg revision "$GITHUB_SHA" '{imageRef:$imageRef,imageId:$imageId,revision:$revision}' > release/registry.json
           (cd release && sha256sum dist.tar.gz image.tar > checksums.txt)
+      - name: Build and export the matching API adapter
+        run: |
+          set -euo pipefail
+          image="ghcr.io/margetrp-hub/oh-haolema-api:sha-$GITHUB_SHA"
+          docker build --file server/Dockerfile --label "org.opencontainers.image.revision=$GITHUB_SHA" --tag "$image" .
+          docker push "$image"
+          docker save --output release/api-image.tar "$image"
+          image_id=$(docker image inspect "$image" --format '{{.Id}}')
+          jq -n --arg imageRef "$image" --arg imageId "$image_id" --arg revision "$GITHUB_SHA" '{imageRef:$imageRef,imageId:$imageId,revision:$revision}' > release/api-registry.json
+          (cd release && sha256sum api-image.tar >> checksums.txt)
       - name: Upload deployment artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -70,5 +80,7 @@ jobs:
             release/image.tar
             release/registry.json
             release/checksums.txt
+            release/api-image.tar
+            release/api-registry.json
           retention-days: 7
           if-no-files-found: error
