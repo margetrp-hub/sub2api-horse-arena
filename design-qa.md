@@ -1,5 +1,30 @@
 # Main Arena Design QA
 
+## Three-Dimensional Lottery: 2026-09-07
+
+Status: **LOCAL-VERIFIED**, prepared for the already authorized frontend release.
+
+- Replaced the pixel machine with a procedural Three.js model: coral enamel,
+  glass chamber, chrome crank, coin slot, tray and 36 two-piece capsules.
+  cannon-es owns capsule collisions and containment during agitation.
+- Mouse drag, horizontal touch, keyboard arrows and reset control change the view.
+  The crank and demo control only animate the toy; they never submit economy writes.
+  Server-authorized draws retain the existing result and idempotency contracts.
+- The WebGL canvas survives account rerenders. Reduced motion disables inertia
+  and extended sequences; hidden views stop rendering. WebGL failure uses the
+  existing bitmap, with unavailable 3D controls disabled.
+- The existing 32 browser checks passed. A further 37 rendering and interaction
+  checks passed at desktop, wide desktop, mobile and 320px widths; two additional
+  touch checks verified horizontal rotation and vertical page scrolling.
+  The reduced-motion image difference was zero, colored machine pixels were
+  nonblank and the body/cap stayed between 6% and 92% of canvas height.
+- TypeScript/Vite build, 23 API tests and 9 practice tests passed. The new 3D
+  entry is about 173 KB gzipped. Physical-phone GPU performance remains unverified;
+  browser screenshots used Chrome with SwiftShader.
+
+Evidence: `output/playwright/lottery-3d-20260907/`,
+`output/playwright/lottery-design-20260907/report.json`.
+
 ## Lottery Redesign: 2026-09-07
 
 Status: **LOCAL-VERIFIED**, included in the authorized UI release candidate.

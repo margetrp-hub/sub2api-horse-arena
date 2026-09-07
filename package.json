@@ -12,10 +12,13 @@
     "test:practice": "node --test tests/practice.test.mjs"
   },
   "dependencies": {
+    "cannon-es": "^0.20.0",
     "lucide": "^1.41.0",
-    "pixi.js": "^7.4.3"
+    "pixi.js": "^7.4.3",
+    "three": "^0.185.1"
   },
   "devDependencies": {
+    "@types/three": "^0.185.4",
     "typescript": "^5.5.4",
     "vite": "^5.4.19"
   }

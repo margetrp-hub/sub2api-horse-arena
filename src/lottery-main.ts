@@ -124,8 +124,8 @@ function renderResultModal(): string {
 function render(): void {
   const focusKey = (document.activeElement as HTMLElement | null)?.dataset.focus ?? returnFocusKey;
   if (focusKey) returnFocusKey = focusKey;
-  activeRuntime?.destroy();
-  activeRuntime = null;
+  const retainedMount = root.querySelector<HTMLElement>(".lottery-runtime");
+  retainedMount?.remove();
   const progress = Math.min(100, (state.paidAmount / state.threshold) * 100);
   const remaining = Math.max(0, state.threshold - state.paidAmount);
   const canDraw = state.apiReady && state.phase === "idle" && !state.pendingResults && state.lotteryTokens > 0;
@@ -163,7 +163,6 @@ function render(): void {
             <p>给努力的一天，添一点好运。</p>
           </div>
           <div class="machine-stage">
-            <div class="machine-floor" aria-hidden="true"></div>
             <div class="lottery-runtime" data-can-draw="${canDraw}"></div>
           </div>
           <div class="stage-caption"><span class="stage-number">NO. 01</span><span class="machine-status" role="status"><i class="${busy ? "is-busy" : ""}"></i>${machineStatus}</span><span class="stage-edition">OH! CLUB</span></div>
@@ -208,7 +207,9 @@ function render(): void {
       ${renderResultModal()}
     </div>
   `;
+  if (retainedMount) root.querySelector(".lottery-runtime")?.replaceWith(retainedMount);
   bindEvents();
+  activeRuntime?.setLocked(busy || state.phase === "revealed");
   const modalOpen = state.phase === "revealed";
   root.querySelector<HTMLElement>(".lottery-topbar")!.inert = modalOpen;
   root.querySelector<HTMLElement>(".lottery-layout")!.inert = modalOpen;
@@ -233,13 +234,12 @@ function bindEvents(): void {
   });
 
   const runtimeMount = root.querySelector<HTMLElement>(".lottery-runtime");
-  if (runtimeMount) {
+  if (runtimeMount && !activeRuntime) {
     activeRuntime = new LotteryMachineRuntime(runtimeMount, {
-      onActivate: () => void draw(1),
       onComplete: finishSpin,
     });
-    if (state.phase === "rolling") activeRuntime.play();
   }
+  if (state.phase === "rolling") activeRuntime?.play();
 }
 
 async function draw(count: number): Promise<void> {
@@ -396,3 +396,5 @@ window.addEventListener("keydown", (event) => {
 
 render();
 void loadLotteryState();
+
+if (import.meta.hot) import.meta.hot.dispose(() => activeRuntime?.destroy());

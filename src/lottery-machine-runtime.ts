@@ -1,525 +1,404 @@
-import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
+import * as THREE from "three";
+import * as CANNON from "cannon-es";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { Pause, Play, Rotate3d, RotateCcw } from "lucide";
+import { icon } from "./ui/icons";
+import { buildMachine, CAPSULE_RADIUS } from "./lottery-machine-model";
 
-type LotteryMachineRuntimeOptions = {
-  onActivate: () => void;
-  onComplete: () => void;
-};
-
-type Ball = {
-  node: Graphics;
-  x: number;
-  y: number;
-  radius: number;
-  phase: number;
-  color: number;
-};
-
-const WIDTH = 720;
-const HEIGHT = 720;
-const PIXEL_SCALE = 2 / 3;
-const ANIMATION_DURATION = 6200;
-const GOLD = 0xc1ef73;
-const GOLD_LIGHT = 0xe3efcf;
-const GLASS = 0x83deca;
-const CHARCOAL = 0x333c36;
-const DEEP = 0x151d18;
-const BALL_COLORS = [0xff806d, 0x62e0ce, 0xf3c969, 0xf8f0d6, 0x75b7e8, 0xffa45f];
-
-function clamp(value: number, min = 0, max = 1): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function easeOut(value: number): number {
-  const t = clamp(value);
-  return 1 - ((1 - t) ** 3);
-}
-
-function easeInOut(value: number): number {
-  const t = clamp(value);
-  return t < 0.5 ? 4 * t ** 3 : 1 - ((-2 * t + 2) ** 3) / 2;
-}
-
-function drawBall(node: Graphics, color: number, radius: number): void {
-  node.clear();
-  const points = [
-    -radius + 5, -radius,
-    radius - 5, -radius,
-    radius, -radius + 5,
-    radius, radius - 5,
-    radius - 5, radius,
-    -radius + 5, radius,
-    -radius, radius - 5,
-    -radius, -radius + 5,
-  ];
-  node.beginFill(DEEP, 0.88);
-  node.drawPolygon(points.map((value, index) => value + (index % 2 === 0 ? 3 : 5)));
-  node.endFill();
-  node.beginFill(color);
-  node.drawPolygon(points);
-  node.endFill();
-  node.lineStyle(2, 0xfff1cf, 0.82);
-  node.drawPolygon(points.map((value) => value * 0.9));
-  node.beginFill(0xfff7df, 0.95);
-  node.drawRect(-radius * 0.35, -radius * 0.38, Math.max(4, radius * 0.22), Math.max(4, radius * 0.22));
-  node.endFill();
-  node.beginFill(DEEP, 0.24);
-  node.drawRect(-radius * 0.42, radius * 0.33, radius * 0.84, Math.max(3, radius * 0.16));
-  node.endFill();
-}
+type LotteryMachineRuntimeOptions = { onComplete: () => void };
+const DURATION = 4400;
+const CAMERA = new THREE.Vector3(5.1, 3.6, 9.8);
+const ease = (x: number): number => 1 - (1 - THREE.MathUtils.clamp(x, 0, 1)) ** 3;
 
 export class LotteryMachineRuntime {
-  private readonly app: Application<HTMLCanvasElement>;
-  private readonly machine = new Container();
-  private readonly balls: Ball[] = [];
-  private readonly button = new Container();
-  private readonly capsule = new Container();
-  private readonly capsuleTop = new Container();
-  private readonly capsuleBottom = new Container();
-  private readonly capsuleBand = new Graphics();
-  private readonly rewardGlow = new Graphics();
-  private readonly indicatorLights: Graphics[] = [];
-  private readonly statusText: Text;
-  private readonly mount: HTMLElement;
-  private readonly options: LotteryMachineRuntimeOptions;
+  private readonly scene = new THREE.Scene();
+  private readonly camera = new THREE.PerspectiveCamera(34, 1, 0.1, 60);
+  private renderer?: THREE.WebGLRenderer;
+  private controls?: OrbitControls;
+  private model?: ReturnType<typeof buildMachine>;
+  private environment?: THREE.WebGLRenderTarget;
+  private readonly world = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.82, 0), allowSleep: true });
+  private readonly bodies: CANNON.Body[] = [];
+  private readonly resizeObserver: ResizeObserver;
+  private readonly visibilityObserver: IntersectionObserver;
+  private readonly motion = matchMedia("(prefers-reduced-motion: reduce)");
+  private animationFrame = 0;
+  private lastTime = 0;
+  private elapsed = 0;
   private startedAt = 0;
-  private running = false;
-  private completed = false;
+  private impulseAt = 0;
+  private mode: "idle" | "demo" | "draw" = "idle";
+  private autoMotion = !this.motion.matches;
+  private locked = false;
+  private visible = true;
   private destroyed = false;
+  private dirty = true;
   private completionTimer: number | undefined;
-  private readonly activate = (event?: MouseEvent): void => {
-    if (event) {
-      const rect = this.mount.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * WIDTH;
-      const y = ((event.clientY - rect.top) / rect.height) * HEIGHT;
-      if (((x - 271) ** 2) + ((y - 535) ** 2) > 68 ** 2) return;
-    }
-    if (!this.running && !this.completed) this.options.onActivate();
-  };
-  private readonly activateFromKeyboard = (event: KeyboardEvent): void => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    this.activate();
-  };
+  private pointerStart = new THREE.Vector2();
+  private pointerId: number | null = null;
+  private readonly stage: HTMLDivElement;
+  private readonly status: HTMLElement;
+  private readonly demoButton: HTMLButtonElement;
+  private readonly motionButton: HTMLButtonElement;
 
-  constructor(mount: HTMLElement, options: LotteryMachineRuntimeOptions) {
-    this.mount = mount;
-    this.options = options;
-    const enabled = this.mount.dataset.canDraw === "true";
-    this.mount.setAttribute("role", enabled ? "button" : "img");
-    this.mount.setAttribute("aria-label", enabled ? "扭一次，消耗一枚代币" : "幸运扭蛋机");
-    this.mount.dataset.runtimeState = "idle";
-    this.mount.addEventListener("click", this.activate);
-    this.mount.addEventListener("keydown", this.activateFromKeyboard);
-    this.mount.tabIndex = enabled ? 0 : -1;
-
-    this.app = new Application<HTMLCanvasElement>({
-      width: WIDTH * PIXEL_SCALE,
-      height: HEIGHT * PIXEL_SCALE,
-      antialias: false,
-      autoDensity: false,
-      backgroundAlpha: 0,
-      resolution: 1,
+  constructor(private readonly mount: HTMLElement, private readonly options: LotteryMachineRuntimeOptions) {
+    mount.innerHTML = `
+      <div class="machine-viewport"></div>
+      <div class="machine-tools" aria-label="扭蛋机视角">
+        <button class="machine-tool" type="button" data-machine-demo data-focus="demo" aria-label="试玩转动，不消耗代币" data-tooltip="试玩转动 · 不消耗代币">${icon(Rotate3d)}</button>
+        <button class="machine-tool" type="button" data-machine-reset data-focus="view" aria-label="重置视角" data-tooltip="重置视角">${icon(RotateCcw)}</button>
+        <button class="machine-tool" type="button" data-machine-motion data-focus="motion"></button>
+      </div>
+      <span class="machine-demo-status" role="status"></span>
+    `;
+    this.stage = mount.querySelector(".machine-viewport")!;
+    this.status = mount.querySelector(".machine-demo-status")!;
+    this.demoButton = mount.querySelector("[data-machine-demo]")!;
+    this.motionButton = mount.querySelector("[data-machine-motion]")!;
+    this.demoButton.addEventListener("click", this.demo);
+    mount.querySelector("[data-machine-reset]")!.addEventListener("click", this.resetView);
+    this.motionButton.addEventListener("click", this.toggleMotion);
+    this.resizeObserver = new ResizeObserver(this.resize);
+    this.visibilityObserver = new IntersectionObserver(([entry]) => {
+      this.visible = entry.isIntersecting;
+      this.wake();
     });
-    this.app.view.className = "lottery-runtime-canvas";
-    this.app.view.style.imageRendering = "pixelated";
-    this.app.view.setAttribute("aria-hidden", "true");
-    this.mount.appendChild(this.app.view);
-    this.statusText = new Text("READY", new TextStyle({
-      fontFamily: "Cascadia Mono, monospace",
-      fontSize: 11,
-      fontWeight: "700",
-      fill: 0xfff0d2,
-      letterSpacing: 0,
-      dropShadow: true,
-      dropShadowColor: 0x451c1a,
-      dropShadowBlur: 2,
-      dropShadowDistance: 1,
-    }));
-    this.buildScene();
-    this.machine.scale.set(PIXEL_SCALE);
-    this.app.stage.addChild(this.machine);
-    this.app.ticker.add(this.tick, this);
-    this.app.ticker.stop();
-    this.renderNow();
+    try {
+      this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
+      this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
+      this.renderer.setClearColor(0x000000, 0);
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1;
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = THREE.PCFShadowMap;
+      const canvas = this.renderer.domElement;
+      canvas.className = "lottery-runtime-canvas";
+      canvas.setAttribute("aria-label", "幸运扭蛋机三维模型");
+      canvas.setAttribute("role", "img");
+      canvas.tabIndex = 0;
+      canvas.dataset.focus = "machine";
+      this.stage.appendChild(canvas);
+      this.setupScene();
+      this.controls = new OrbitControls(this.camera, canvas);
+      canvas.style.touchAction = "pan-y pinch-zoom";
+      this.controls.target.set(0, 2.1, 0);
+      this.controls.enablePan = false;
+      this.controls.enableZoom = false;
+      this.controls.enableDamping = !this.motion.matches;
+      this.controls.dampingFactor = 0.09;
+      this.controls.minPolarAngle = Math.PI * 0.31;
+      this.controls.maxPolarAngle = Math.PI * 0.53;
+      this.controls.rotateSpeed = 0.65;
+      this.controls.addEventListener("change", this.markDirty);
+      canvas.addEventListener("pointerdown", this.pointerDown);
+      canvas.addEventListener("pointerup", this.pointerUp);
+      canvas.addEventListener("pointercancel", this.pointerCancel);
+      canvas.addEventListener("keydown", this.keyDown);
+      canvas.addEventListener("webglcontextlost", this.contextLost);
+      this.resizeObserver.observe(this.stage);
+      this.visibilityObserver.observe(this.stage);
+      this.motion.addEventListener("change", this.motionChanged);
+      document.addEventListener("visibilitychange", this.wake);
+      mount.dataset.runtimeState = "idle";
+      mount.dataset.renderer = "three";
+      this.updateMotionControl();
+      this.resize();
+      this.animationFrame = requestAnimationFrame(this.tick);
+    } catch {
+      this.fallback();
+    }
+  }
+
+  setLocked(locked: boolean): void {
+    this.locked = locked;
+    this.demoButton.disabled = locked || this.mode !== "idle" || !this.renderer;
   }
 
   play(): void {
-    if (this.destroyed || this.running) return;
-    this.running = true;
-    this.completed = false;
+    if (this.destroyed || this.mode === "draw") return;
+    this.start("draw");
+  }
+
+  private readonly demo = (): void => {
+    if (!this.locked && this.mode === "idle" && this.renderer) this.start("demo");
+  };
+
+  private start(mode: "demo" | "draw"): void {
+    clearTimeout(this.completionTimer);
+    this.mode = mode;
+    this.elapsed = 0;
     this.startedAt = performance.now();
-    this.mount.dataset.runtimeState = "playing";
-    this.statusText.text = "RUN";
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      this.completionTimer = window.setTimeout(() => this.options.onComplete(), 100);
+    this.impulseAt = -1;
+    this.mount.dataset.runtimeState = mode === "draw" ? "playing" : "demo";
+    this.status.textContent = mode === "demo" ? "试玩中 · 不消耗代币" : "";
+    this.demoButton.disabled = true;
+    if (this.model) this.model.delivery.visible = false;
+    if (!this.renderer || this.motion.matches) {
+      if (this.model) {
+        this.model.crank.rotation.z -= Math.PI / 2;
+        this.dirty = true;
+      }
+      this.completionTimer = window.setTimeout(this.complete, 120);
       return;
     }
-    this.app.ticker.start();
+    // Results must still settle if the tab becomes hidden during the presentation.
+    if (mode === "draw") this.completionTimer = window.setTimeout(this.complete, DURATION + 100);
+    this.wake();
+  }
+
+  private readonly complete = (): void => {
+    if (this.destroyed || this.mode === "idle") return;
+    const draw = this.mode === "draw";
+    this.mode = "idle";
+    clearTimeout(this.completionTimer);
+    this.mount.dataset.runtimeState = "idle";
+    this.status.textContent = "";
+    this.demoButton.disabled = this.locked || !this.renderer;
+    this.dirty = true;
+    if (draw) this.options.onComplete();
+  };
+
+  private setupScene(): void {
+    const renderer = this.renderer!;
+    this.model = buildMachine();
+    this.scene.add(this.model.group);
+    this.camera.position.copy(CAMERA);
+    this.camera.lookAt(0, 2.1, 0);
+    const room = new RoomEnvironment();
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    this.environment = pmrem.fromScene(room, 0.04);
+    this.scene.environment = this.environment.texture;
+    this.scene.environmentIntensity = 0.65;
+    room.dispose();
+    pmrem.dispose();
+    this.scene.add(new THREE.HemisphereLight(0xf7f5ed, 0x778e83, 1.1));
+    const key = new THREE.DirectionalLight(0xfff2dc, 2.2);
+    key.position.set(-3, 7, 5);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.left = key.shadow.camera.bottom = -4;
+    key.shadow.camera.right = key.shadow.camera.top = 4;
+    key.shadow.camera.near = 0.1;
+    key.shadow.camera.far = 20;
+    key.shadow.normalBias = 0.035;
+    key.shadow.bias = -0.0003;
+    key.shadow.radius = 5;
+    this.scene.add(key);
+    const fill = new THREE.DirectionalLight(0xd8fff1, 0.8);
+    fill.position.set(4, 4, -2);
+    this.scene.add(fill);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.ShadowMaterial({ opacity: 0.22 }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.015;
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+    this.setupPhysics();
+  }
+
+  private setupPhysics(): void {
+    this.world.defaultContactMaterial.friction = 0.3;
+    this.world.defaultContactMaterial.restitution = 0.3;
+    const floor = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(1.2, 0.05, 1.2)), position: new CANNON.Vec3(0, 2.2, 0) });
+    this.world.addBody(floor);
+    this.world.addBody(new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(1.2, 0.05, 1.2)), position: new CANNON.Vec3(0, 3.94, 0) }));
+    for (let i = 0; i < 24; i++) {
+      const angle = i * Math.PI * 2 / 24;
+      const wall = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(0.06, 0.88, 0.15)) });
+      wall.position.set(Math.cos(angle) * 1.02, 3.06, Math.sin(angle) * 1.02);
+      wall.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), -angle);
+      this.world.addBody(wall);
+    }
+    this.model!.capsules.forEach((_, i) => {
+      const slot = i % 9;
+      const layer = Math.floor(i / 9);
+      const angle = slot * Math.PI * 2 / 8 + layer * 0.19;
+      const radius = slot === 8 ? 0.06 : 0.68;
+      const body = new CANNON.Body({
+        mass: 0.12, shape: new CANNON.Sphere(CAPSULE_RADIUS),
+        position: new CANNON.Vec3(Math.cos(angle) * radius, 2.46 + layer * 0.41, Math.sin(angle) * radius),
+        linearDamping: 0.15, angularDamping: 0.22, sleepSpeedLimit: 0.12, sleepTimeLimit: 0.5,
+      });
+      body.quaternion.setFromEuler(i * 1.1, i * 0.7, i * 0.4);
+      body.velocity.set(Math.sin(i * 2) * 0.25, 0, Math.cos(i * 3) * 0.25);
+      this.bodies.push(body);
+      this.world.addBody(body);
+    });
+    for (let i = 0; i < 150; i++) this.world.step(1 / 60);
+    this.syncCapsules();
+  }
+
+  private syncCapsules(): void {
+    this.bodies.forEach((body, i) => {
+      this.model!.capsules[i].position.copy(body.position);
+      this.model!.capsules[i].quaternion.copy(body.quaternion);
+    });
+  }
+
+  private readonly resize = (): void => {
+    if (!this.renderer) return;
+    const { width, height } = this.stage.getBoundingClientRect();
+    if (!width || !height) return;
+    this.renderer.setSize(width, height, false);
+    this.camera.aspect = width / height;
+    // Frame the entire object, including the tray, in narrow and short viewports.
+    this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(2.68 / CAMERA.length())) / Math.min(1, this.camera.aspect / 0.79);
+    this.camera.updateProjectionMatrix();
+    this.dirty = true;
+    this.wake();
+  };
+
+  private readonly markDirty = (): void => { this.dirty = true; };
+  private readonly wake = (): void => {
+    this.lastTime = 0;
+    this.dirty = true;
+    if (!this.animationFrame && !this.destroyed && this.renderer && this.visible && !document.hidden) {
+      this.animationFrame = requestAnimationFrame(this.tick);
+    }
+  };
+
+  private readonly tick = (now: number): void => {
+    this.animationFrame = 0;
+    if (this.destroyed || !this.renderer || !this.visible || document.hidden) return;
+    this.animationFrame = requestAnimationFrame(this.tick);
+    if (this.lastTime && now - this.lastTime < 1000 / 30) return;
+    const dt = this.lastTime ? Math.min((now - this.lastTime) / 1000, 0.05) : 1 / 30;
+    this.lastTime = now;
+    this.controls?.update();
+    const model = this.model!;
+    if (this.mode !== "idle") {
+      this.elapsed = now - this.startedAt;
+      const progress = this.elapsed / DURATION;
+      model.crank.rotation.z = -Math.PI * 2 * ease(this.elapsed / 1600);
+      model.paddle.rotation.y = this.elapsed * 0.012;
+      if (this.elapsed < 2600 && this.elapsed - this.impulseAt > 180) {
+        this.impulseAt = this.elapsed;
+        this.bodies.forEach((body, i) => {
+          body.wakeUp();
+          body.applyImpulse(new CANNON.Vec3(-body.position.z * 0.08, 0.1 + (i % 3) * 0.015, body.position.x * 0.08));
+        });
+      }
+      this.world.step(1 / 60, dt, 3);
+      this.syncCapsules();
+      const drop = THREE.MathUtils.clamp((this.elapsed - 2750) / 900, 0, 1);
+      model.delivery.visible = drop > 0;
+      model.delivery.position.set(0, 0.705 + Math.sin(drop * Math.PI) * 0.09, 0.98 + ease(drop) * 0.39);
+      model.delivery.rotation.x = -drop * Math.PI * 2;
+      this.dirty = true;
+      if (progress >= 1) this.complete();
+    } else if (this.autoMotion && !this.locked) {
+      model.group.rotation.y = Math.sin(now * 0.0005) * 0.045;
+      this.world.step(1 / 60, dt, 3);
+      this.syncCapsules();
+      this.dirty = true;
+    }
+    if (this.dirty) {
+      this.renderer.render(this.scene, this.camera);
+      this.dirty = false;
+    }
+  };
+
+  private readonly pointerDown = (event: PointerEvent): void => {
+    if (!event.isPrimary) { this.pointerId = null; return; }
+    this.pointerId = event.pointerId;
+    this.pointerStart.set(event.clientX, event.clientY);
+  };
+  private readonly pointerCancel = (): void => { this.pointerId = null; };
+  private readonly pointerUp = (event: PointerEvent): void => {
+    if (event.pointerId !== this.pointerId) return;
+    this.pointerId = null;
+    if (Math.hypot(event.clientX - this.pointerStart.x, event.clientY - this.pointerStart.y) > 7 || !this.model) return;
+    const rect = this.stage.getBoundingClientRect();
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2), this.camera);
+    if (ray.intersectObject(this.model.crank, true).length) this.demo();
+  };
+  private readonly keyDown = (event: KeyboardEvent): void => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); this.demo(); }
+    else if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+      event.preventDefault();
+      const relative = this.camera.position.clone().sub(new THREE.Vector3(0, 2.1, 0));
+      const spherical = new THREE.Spherical().setFromVector3(relative);
+      if (event.key === "ArrowLeft") spherical.theta -= 0.2;
+      if (event.key === "ArrowRight") spherical.theta += 0.2;
+      if (event.key === "ArrowUp") spherical.phi -= 0.1;
+      if (event.key === "ArrowDown") spherical.phi += 0.1;
+      this.camera.position.setFromSpherical(spherical).add(new THREE.Vector3(0, 2.1, 0));
+      this.controls?.update();
+      this.dirty = true;
+    }
+  };
+  private readonly resetView = (): void => {
+    if (this.controls) this.controls.enableDamping = false;
+    this.controls?.reset();
+    this.camera.position.copy(CAMERA);
+    this.controls?.target.set(0, 2.1, 0);
+    this.controls?.update();
+    if (this.controls) this.controls.enableDamping = !this.motion.matches;
+    if (this.model) this.model.group.rotation.y = 0;
+    this.dirty = true;
+  };
+  private readonly toggleMotion = (): void => {
+    this.autoMotion = !this.autoMotion;
+    this.updateMotionControl();
+    this.wake();
+  };
+  private readonly motionChanged = (): void => {
+    this.autoMotion = !this.motion.matches;
+    if (this.controls) this.controls.enableDamping = !this.motion.matches;
+    if (this.motion.matches && this.mode !== "idle") this.complete();
+    this.updateMotionControl();
+    this.wake();
+  };
+  private updateMotionControl(): void {
+    const label = this.autoMotion ? "暂停待机动画" : "播放待机动画";
+    this.motionButton.innerHTML = icon(this.autoMotion ? Pause : Play);
+    this.motionButton.setAttribute("aria-label", label);
+    this.motionButton.setAttribute("aria-pressed", String(this.autoMotion));
+    this.motionButton.dataset.tooltip = label;
+  }
+  private readonly contextLost = (event: Event): void => {
+    event.preventDefault();
+    const pendingDraw = this.mode === "draw";
+    this.fallback();
+    if (pendingDraw) this.complete();
+  };
+  private fallback(): void {
+    cancelAnimationFrame(this.animationFrame);
+    this.animationFrame = 0;
+    this.controls?.dispose();
+    this.renderer?.dispose();
+    this.renderer = undefined;
+    this.mount.dataset.renderer = "fallback";
+    this.stage.innerHTML = `<img class="machine-fallback" src="${import.meta.env.BASE_URL}assets/lottery-capsule-machine.png" alt="幸运扭蛋机"><span class="machine-fallback-note">三维画面暂不可用</span>`;
+    this.mount.querySelectorAll<HTMLButtonElement>(".machine-tool").forEach(button => { button.disabled = true; });
   }
 
   destroy(): void {
-    if (this.destroyed) return;
     this.destroyed = true;
-    window.clearTimeout(this.completionTimer);
-    this.mount.removeEventListener("click", this.activate);
-    this.mount.removeEventListener("keydown", this.activateFromKeyboard);
-    this.app.ticker.remove(this.tick, this);
-    this.app.destroy(true, { children: true, texture: false, baseTexture: false });
-  }
-
-  private buildScene(): void {
-    const shadow = new Graphics();
-    shadow.beginFill(DEEP, 0.95);
-    shadow.drawRect(184, 690, 352, 18);
-    shadow.endFill();
-    this.machine.addChild(shadow);
-
-    const body = new Graphics();
-    body.beginFill(CHARCOAL);
-    body.drawRect(216, 390, 288, 298);
-    body.endFill();
-    body.lineStyle(8, GOLD, 1);
-    body.drawRect(216, 390, 288, 298);
-    body.beginFill(0x173c3e, 1);
-    body.drawRect(232, 407, 256, 265);
-    body.endFill();
-    body.lineStyle(3, GLASS, 0.48);
-    body.drawRect(232, 407, 256, 265);
-    body.beginFill(0x061519, 0.7);
-    body.drawRect(245, 421, 10, 236);
-    body.drawRect(465, 421, 10, 236);
-    body.endFill();
-    this.machine.addChild(body);
-
-    const bodyDetails = new Graphics();
-    bodyDetails.lineStyle(3, GOLD_LIGHT, 0.46);
-    bodyDetails.moveTo(256, 429);
-    bodyDetails.lineTo(256, 454);
-    bodyDetails.moveTo(464, 429);
-    bodyDetails.lineTo(464, 454);
-    bodyDetails.beginFill(GOLD, 0.92);
-    bodyDetails.drawRect(251, 440, 10, 7);
-    bodyDetails.drawRect(459, 440, 10, 7);
-    bodyDetails.endFill();
-    bodyDetails.beginFill(GLASS, 0.9);
-    bodyDetails.drawRect(251, 633, 10, 10);
-    bodyDetails.drawRect(459, 633, 10, 10);
-    bodyDetails.endFill();
-    bodyDetails.beginFill(DEEP, 0.92);
-    bodyDetails.drawRect(250, 474, 12, 12);
-    bodyDetails.drawRect(458, 474, 12, 12);
-    bodyDetails.endFill();
-    this.machine.addChild(bodyDetails);
-
-    [
-      [251, 440, GOLD], [459, 440, GOLD],
-      [251, 633, GLASS], [459, 633, GLASS],
-    ].forEach(([x, y, color]) => {
-      const light = new Graphics();
-      light.beginFill(color, 1);
-      light.drawRect(0, 0, 10, 10);
-      light.endFill();
-      light.position.set(x, y);
-      this.indicatorLights.push(light);
-      this.machine.addChild(light);
+    cancelAnimationFrame(this.animationFrame);
+    clearTimeout(this.completionTimer);
+    this.resizeObserver.disconnect();
+    this.visibilityObserver.disconnect();
+    this.motion.removeEventListener("change", this.motionChanged);
+    document.removeEventListener("visibilitychange", this.wake);
+    this.controls?.dispose();
+    const geometries = new Set<THREE.BufferGeometry>();
+    const materials = new Set<THREE.Material>();
+    const textures = new Set<THREE.Texture>();
+    this.scene.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      geometries.add(object.geometry);
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+        materials.add(material);
+        for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
+      }
     });
-
-    const base = new Graphics();
-    base.beginFill(DEEP);
-    base.drawRect(182, 650, 356, 66);
-    base.endFill();
-    base.lineStyle(8, GOLD, 1);
-    base.drawRect(182, 650, 356, 66);
-    base.lineStyle(3, GOLD_LIGHT, 0.72);
-    base.drawRect(197, 662, 326, 42);
-    base.beginFill(0x173c3e, 1);
-    base.drawRect(215, 672, 52, 20);
-    base.drawRect(453, 672, 52, 20);
-    base.endFill();
-    this.machine.addChild(base);
-
-    const dome = new Graphics();
-    const outerDome = [360, 38, 430, 46, 492, 74, 540, 124, 560, 180, 560, 346, 522, 400, 198, 400, 160, 346, 160, 180, 180, 124, 228, 74, 290, 46];
-    const innerDome = [360, 59, 423, 66, 477, 91, 518, 137, 536, 184, 536, 338, 507, 380, 213, 380, 184, 338, 184, 184, 202, 137, 243, 91, 297, 66];
-    dome.beginFill(0x0c2427, 1);
-    dome.drawPolygon(outerDome);
-    dome.endFill();
-    dome.lineStyle(8, GOLD, 1);
-    dome.drawPolygon(outerDome);
-    dome.beginFill(0x164246, 0.78);
-    dome.drawPolygon(innerDome);
-    dome.endFill();
-    dome.lineStyle(3, GLASS, 0.95);
-    dome.drawPolygon(innerDome);
-    dome.lineStyle(2, GOLD_LIGHT, 0.42);
-    dome.moveTo(190, 180);
-    dome.lineTo(190, 336);
-    dome.moveTo(530, 180);
-    dome.lineTo(530, 336);
-    this.machine.addChild(dome);
-
-    const ballsLayer = new Container();
-    const ballPositions = [
-      [281, 181, 22], [335, 151, 22], [388, 168, 24], [444, 190, 23],
-      [255, 234, 23], [303, 230, 22], [355, 214, 24], [412, 225, 23], [465, 244, 23],
-      [278, 286, 24], [329, 277, 22], [380, 277, 23], [430, 292, 24],
-      [308, 337, 23], [359, 330, 25], [411, 344, 22],
-    ];
-    ballPositions.forEach(([x, y, radius], index) => {
-      const node = new Graphics();
-      const color = BALL_COLORS[index % BALL_COLORS.length];
-      drawBall(node, color, radius);
-      node.position.set(x, y);
-      ballsLayer.addChild(node);
-      this.balls.push({ node, x, y, radius, phase: index * 0.77, color });
-    });
-    this.machine.addChild(ballsLayer);
-
-    const glassReflection = new Graphics();
-    glassReflection.beginFill(0xeaffdf, 0.13);
-    glassReflection.drawRect(222, 136, 11, 166);
-    glassReflection.drawRect(485, 214, 9, 74);
-    glassReflection.endFill();
-    glassReflection.lineStyle(3, 0xeaffdf, 0.7);
-    glassReflection.moveTo(228, 118);
-    glassReflection.lineTo(258, 88);
-    glassReflection.lineTo(290, 72);
-    this.machine.addChild(glassReflection);
-
-    const neck = new Graphics();
-    neck.beginFill(DEEP);
-    neck.drawRect(205, 376, 310, 54);
-    neck.endFill();
-    neck.lineStyle(8, GOLD, 1);
-    neck.drawRect(205, 376, 310, 54);
-    neck.lineStyle(2, GOLD_LIGHT, 0.7);
-    neck.drawRect(220, 389, 280, 27);
-    this.machine.addChild(neck);
-
-    const cap = new Graphics();
-    cap.beginFill(DEEP);
-    cap.drawRect(226, 66, 268, 76);
-    cap.endFill();
-    cap.lineStyle(8, GOLD, 1);
-    cap.drawRect(226, 66, 268, 76);
-    cap.lineStyle(3, GOLD_LIGHT, 0.78);
-    cap.drawRect(239, 79, 242, 50);
-    cap.beginFill(0x173c3e, 1);
-    cap.drawRect(250, 89, 220, 30);
-    cap.endFill();
-    cap.lineStyle(2, GLASS, 0.55);
-    cap.drawRect(250, 89, 220, 30);
-    this.machine.addChild(cap);
-
-    const capKnob = new Graphics();
-    capKnob.beginFill(0x173c3e);
-    capKnob.drawRect(347, 42, 26, 26);
-    capKnob.endFill();
-    capKnob.lineStyle(4, GOLD, 1);
-    capKnob.drawRect(347, 42, 26, 26);
-    capKnob.beginFill(GOLD_LIGHT, 0.55);
-    capKnob.drawRect(352, 47, 7, 7);
-    capKnob.endFill();
-    this.machine.addChild(capKnob);
-
-    const capText = new Text("LUCKY  /  CAPSULE", new TextStyle({
-      fontFamily: "Cascadia Mono, monospace",
-      fontSize: 14,
-      fontWeight: "700",
-      fill: GOLD_LIGHT,
-      letterSpacing: 0,
-    }));
-    capText.anchor.set(0.5);
-    capText.position.set(360, 103);
-    this.machine.addChild(capText);
-
-    const panel = new Graphics();
-    panel.beginFill(0x1b494a);
-    panel.drawRect(306, 452, 146, 116);
-    panel.endFill();
-    panel.lineStyle(5, GOLD_LIGHT, 1);
-    panel.drawRect(306, 452, 146, 116);
-    panel.lineStyle(2, DEEP, 0.95);
-    panel.drawRect(317, 463, 124, 94);
-    panel.beginFill(DEEP, 1);
-    panel.drawRect(329, 507, 100, 27);
-    panel.endFill();
-    panel.lineStyle(2, GLASS, 0.86);
-    panel.drawRect(329, 507, 100, 27);
-    panel.beginFill(GOLD, 0.9);
-    panel.drawRect(340, 514, 8, 8);
-    panel.drawRect(358, 514, 8, 8);
-    panel.drawRect(376, 514, 8, 8);
-    panel.drawRect(394, 514, 8, 8);
-    panel.endFill();
-    panel.beginFill(GLASS, 0.85);
-    panel.drawRect(330, 480, 36, 8);
-    panel.drawRect(373, 480, 56, 8);
-    panel.endFill();
-    this.machine.addChild(panel);
-
-    const lucky = new Text("TOKEN", new TextStyle({
-      fontFamily: "Cascadia Mono, monospace",
-      fontSize: 17,
-      fontWeight: "700",
-      fill: GOLD_LIGHT,
-      letterSpacing: 0,
-    }));
-    lucky.anchor.set(0.5);
-    lucky.position.set(379, 476);
-    this.machine.addChild(lucky);
-
-    const outlet = new Graphics();
-    outlet.beginFill(DEEP);
-    outlet.drawRect(294, 585, 132, 120);
-    outlet.endFill();
-    outlet.lineStyle(6, GOLD, 1);
-    outlet.drawRect(294, 585, 132, 120);
-    outlet.beginFill(0x020d10);
-    outlet.drawRect(307, 599, 106, 94);
-    outlet.endFill();
-    outlet.lineStyle(2, GLASS, 0.62);
-    outlet.drawRect(316, 612, 88, 56);
-    outlet.beginFill(0x1b494a, 0.9);
-    outlet.drawRect(316, 612, 88, 10);
-    outlet.drawRect(316, 680, 88, 8);
-    outlet.endFill();
-    outlet.beginFill(GOLD, 0.8);
-    outlet.drawRect(329, 602, 62, 5);
-    outlet.endFill();
-    this.machine.addChild(outlet);
-
-    const lever = new Graphics();
-    lever.lineStyle(9, GOLD, 1);
-    lever.moveTo(271, 535);
-    lever.lineTo(306, 515);
-    lever.beginFill(BALL_COLORS[0], 1);
-    lever.drawRect(247, 520, 20, 20);
-    lever.endFill();
-    lever.lineStyle(2, 0xffc0a9, 0.9);
-    lever.drawRect(251, 524, 12, 12);
-    this.machine.addChild(lever);
-
-    this.button.position.set(271, 535);
-    const buttonBezel = new Graphics();
-    buttonBezel.beginFill(DEEP);
-    buttonBezel.drawRect(-48, -38, 96, 76);
-    buttonBezel.endFill();
-    buttonBezel.lineStyle(5, GOLD, 1);
-    buttonBezel.drawRect(-48, -38, 96, 76);
-    this.button.addChild(buttonBezel);
-    const buttonFace = new Graphics();
-    buttonFace.beginFill(0xff806d);
-    buttonFace.drawRect(-35, -26, 70, 52);
-    buttonFace.endFill();
-    buttonFace.lineStyle(3, 0xffc0a9, 0.92);
-    buttonFace.drawRect(-31, -22, 62, 44);
-    buttonFace.beginFill(0xfff1cf, 0.9);
-    buttonFace.drawRect(-23, -17, 8, 8);
-    buttonFace.endFill();
-    this.button.addChild(buttonFace);
-    this.statusText.anchor.set(0.5);
-    this.statusText.position.set(0, 5);
-    this.button.addChild(this.statusText);
-    this.machine.addChild(this.button);
-
-    const capsuleTopGraphic = new Graphics();
-    capsuleTopGraphic.beginFill(BALL_COLORS[0]);
-    capsuleTopGraphic.drawPolygon([-24, -42, 24, -42, 31, -35, 31, -10, -31, -10, -31, -35]);
-    capsuleTopGraphic.endFill();
-    capsuleTopGraphic.lineStyle(2, 0xffc0a9, 0.9);
-    capsuleTopGraphic.drawPolygon([-24, -39, 24, -39, 28, -34, 28, -13, -28, -13, -28, -34]);
-    capsuleTopGraphic.beginFill(0xfff5dd, 0.9);
-    capsuleTopGraphic.drawRect(-17, -33, 7, 7);
-    capsuleTopGraphic.endFill();
-    this.capsuleTop.addChild(capsuleTopGraphic);
-    const capsuleBottomGraphic = new Graphics();
-    capsuleBottomGraphic.beginFill(0xf1d39a);
-    capsuleBottomGraphic.drawPolygon([-31, 10, 31, 10, 31, 35, 24, 42, -24, 42, -31, 35]);
-    capsuleBottomGraphic.endFill();
-    capsuleBottomGraphic.lineStyle(2, GOLD_LIGHT, 0.9);
-    capsuleBottomGraphic.drawPolygon([-28, 13, 28, 13, 28, 33, 22, 38, -22, 38, -28, 33]);
-    this.capsuleBottom.addChild(capsuleBottomGraphic);
-    this.capsuleBand.beginFill(GOLD);
-    this.capsuleBand.drawRect(-32, -4, 64, 8);
-    this.capsuleBand.endFill();
-    this.capsule.addChild(this.capsuleBottom, this.capsuleTop, this.capsuleBand);
-    this.capsule.position.set(360, 650);
-    this.capsule.scale.set(0.2);
-    this.capsule.visible = false;
-    this.machine.addChild(this.capsule);
-
-    this.rewardGlow.beginFill(GOLD, 0.22);
-    this.rewardGlow.drawRect(-28, -28, 56, 56);
-    this.rewardGlow.endFill();
-    this.rewardGlow.lineStyle(3, GOLD_LIGHT, 0.8);
-    for (let index = 0; index < 8; index += 1) {
-      const angle = (Math.PI * 2 * index) / 8;
-      this.rewardGlow.moveTo(Math.cos(angle) * 48, Math.sin(angle) * 48);
-      this.rewardGlow.lineTo(Math.cos(angle) * 63, Math.sin(angle) * 63);
-    }
-    this.rewardGlow.position.set(360, 624);
-    this.rewardGlow.alpha = 0;
-    this.machine.addChild(this.rewardGlow);
-  }
-
-  private tick(): void {
-    if (!this.running || this.destroyed) return;
-    const elapsed = performance.now() - this.startedAt;
-    const progress = clamp(elapsed / ANIMATION_DURATION);
-    const agitation = easeInOut(clamp(progress / 0.5));
-    const decay = 1 - easeInOut(clamp((progress - 0.48) / 0.25));
-    const shake = agitation * (0.65 + decay * 1.8);
-    this.machine.position.x = Math.sin(elapsed * 0.047) * shake * 3.2;
-    this.machine.position.y = Math.abs(Math.sin(elapsed * 0.038)) * shake * 2.2;
-    this.machine.rotation = Math.sin(elapsed * 0.035) * shake * 0.0028;
-    this.indicatorLights.forEach((light, index) => {
-      const pulse = 0.5 + Math.abs(Math.sin(elapsed * 0.008 + index * 1.3)) * 0.5;
-      light.alpha = this.running ? 0.55 + pulse * 0.45 : 0.72;
-    });
-
-    this.balls.forEach((ball, index) => {
-      const orbit = agitation * (8 + (index % 4) * 3) + decay * 3;
-      ball.node.position.x = ball.x + Math.sin(elapsed * (0.005 + index * 0.00012) + ball.phase) * orbit;
-      ball.node.position.y = ball.y + Math.cos(elapsed * (0.004 + index * 0.0001) + ball.phase) * orbit * 0.78;
-      ball.node.rotation = elapsed * 0.0014 * (index % 2 === 0 ? 1 : -1);
-      drawBall(ball.node, ball.color, ball.radius);
-    });
-
-    const press = easeOut(clamp(progress / 0.1)) * (1 - easeOut(clamp((progress - 0.18) / 0.12)));
-    this.button.position.y = 535 + press * 10;
-    this.button.scale.set(1 - press * 0.06);
-
-    const capsuleProgress = clamp((progress - 0.48) / 0.24);
-    this.capsule.visible = capsuleProgress > 0;
-    if (this.capsule.visible) {
-      const drop = easeOut(capsuleProgress);
-      this.capsule.position.y = 505 + drop * 145;
-      this.capsule.scale.set(0.36 + drop * 0.64);
-      this.capsule.rotation = Math.sin(elapsed * 0.01) * (1 - drop) * 0.18;
-      const open = easeOut(clamp((progress - 0.78) / 0.17));
-      this.capsuleTop.position.y = -open * 34;
-      this.capsuleTop.position.x = open * 8;
-      this.capsuleTop.rotation = open * 0.16;
-      this.capsuleBottom.position.y = open * 9;
-      this.capsuleBand.alpha = 1 - open;
-      this.rewardGlow.alpha = open * (0.68 + Math.sin(elapsed * 0.015) * 0.18);
-      this.rewardGlow.scale.set(0.88 + Math.sin(elapsed * 0.01) * 0.06);
-    }
-
-    this.renderNow();
-    if (progress >= 1) {
-      this.running = false;
-      this.completed = true;
-      this.mount.dataset.runtimeState = "complete";
-      this.statusText.text = "DONE";
-      this.app.ticker.stop();
-      this.renderNow();
-      this.options.onComplete();
-    }
-  }
-
-  private renderNow(): void {
-    if (!this.destroyed) this.app.renderer.render(this.app.stage);
+    geometries.forEach(geometry => geometry.dispose());
+    materials.forEach(material => material.dispose());
+    textures.forEach(texture => texture.dispose());
+    this.environment?.dispose();
+    this.renderer?.dispose();
+    this.mount.replaceChildren();
   }
 }
