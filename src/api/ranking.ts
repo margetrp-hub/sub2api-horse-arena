@@ -190,10 +190,11 @@ export async function fetchRankingSnapshot(signal?: AbortSignal): Promise<Rankin
   const url = endpoint();
   if (!url) throw new Error("Ranking endpoint is not configured");
 
-  const headers = await authenticatedSessionHeaders();
+  const sameOrigin = new URL(url).origin === window.location.origin;
+  const headers = sameOrigin ? await authenticatedSessionHeaders() : { Accept: "application/json" };
   const response = await fetch(url, {
     headers,
-    credentials: "include",
+    credentials: sameOrigin ? "include" : "omit",
     cache: "no-store",
     signal,
   });
