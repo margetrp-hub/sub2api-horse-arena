@@ -1,5 +1,5 @@
 import { ArrowRight, Check, ChevronLeft, ChevronRight, CircleCheck, Coins, Copy, History, Link, RefreshCw, X } from "lucide";
-import { authenticatedSessionHeaders } from "../api/ranking";
+import { authenticatedSessionHeaders, rejectAuthenticatedSession } from "../api/ranking";
 import { gameLoginHref, rememberGameLogin } from "../api/game-login";
 import { icon } from "./icons";
 import "./points.css";
@@ -54,6 +54,7 @@ export class PointsAccount {
     document.body.append(this.dialog);
     this.dialog.addEventListener("click", (event) => { if (event.target === this.dialog) this.dialog.close(); });
     window.addEventListener("storage", this.onStorage);
+    window.addEventListener("oh-haolema:session", this.onSession);
     window.addEventListener("focus", this.onVisible);
     document.addEventListener("visibilitychange", this.onVisible);
     this.timer = window.setInterval(this.onVisible, 60000);
@@ -82,6 +83,7 @@ export class PointsAccount {
       const payload = await response.json().catch(() => null);
       if (generation !== this.generation) return;
       if (!response.ok || payload?.success !== true) {
+        if (response.status === 401) rejectAuthenticatedSession(headers.Authorization);
         this.account = null;
         this.status = response.status === 401 ? "login" : payload?.code === "points_account_required" ? "required" : "error";
         this.message = this.status === "error" ? "暂时无法更新积分，请重试" : "";
@@ -207,6 +209,7 @@ export class PointsAccount {
     this.controller?.abort();
     window.clearInterval(this.timer);
     window.removeEventListener("storage", this.onStorage);
+    window.removeEventListener("oh-haolema:session", this.onSession);
     window.removeEventListener("focus", this.onVisible);
     document.removeEventListener("visibilitychange", this.onVisible);
     this.dialog.remove();

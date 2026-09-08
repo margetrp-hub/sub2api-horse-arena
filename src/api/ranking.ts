@@ -152,37 +152,78 @@ export function browserSessionHeaders(): Record<string, string> {
 
 let newApiSession: Record<string, string> | undefined;
 let sessionRefresh: Promise<Record<string, string>> | undefined;
+let sessionValidUntil = 0;
+let sessionRetryAt = 0;
+let sessionEpoch = 0;
+
+function clearSession(signedOut = false): void {
+  sessionEpoch++;
+  sessionRefresh = undefined;
+  newApiSession = {};
+  sessionValidUntil = signedOut ? Date.now() + 300_000 : 0;
+  sessionRetryAt = 0;
+}
+
+export function rejectAuthenticatedSession(authorization?: string): void {
+  if (authorization && authorization === newApiSession?.Authorization) clearSession();
+}
+
+function receiveHostSession(value: unknown): void {
+  const event = value as { kind?: string; sid?: string; timestamp?: number } | null;
+  if (runtimeConfig().source !== "newapi" || !event || !["authenticated", "signed_out"].includes(event.kind || "") ||
+      typeof event.sid !== "string" || !event.sid || typeof event.timestamp !== "number" || !Number.isFinite(event.timestamp) || Math.abs(Date.now() - event.timestamp) >= 60_000) return;
+  clearSession(event.kind === "signed_out");
+  window.dispatchEvent(new Event("oh-haolema:session"));
+}
+
+if (typeof BroadcastChannel !== "undefined") {
+  const channel = new BroadcastChannel("new-api:auth-session");
+  channel.addEventListener("message", event => receiveHostSession(event.data));
+}
+window.addEventListener("storage", event => {
+  if (event.key === "new-api:auth-session:event" && event.newValue) {
+    try { receiveHostSession(JSON.parse(event.newValue)); } catch { /* Ignore malformed host events. */ }
+  } else if (event.key === null || ["user", "uid", "auth_token"].includes(event.key)) clearSession();
+});
 
 export async function authenticatedSessionHeaders(): Promise<Record<string, string>> {
   if (runtimeConfig().source !== "newapi") return browserSessionHeaders();
+  if (Date.now() < sessionValidUntil) return browserSessionHeaders();
+  if (Date.now() < sessionRetryAt) throw new Error("登录状态暂时无法确认");
   if (sessionRefresh) return sessionRefresh;
+  const epoch = sessionEpoch;
   const refresh = async (): Promise<Record<string, string>> => {
     for (let attempt = 0; attempt < 4; attempt++) {
       const response = await fetch("/api/user/auth/refresh", {
         method: "POST", credentials: "include", cache: "no-store", redirect: "error",
         signal: AbortSignal.timeout(10000), headers: { Accept: "application/json" },
       });
-      if (response.status === 404 || response.status === 405) { newApiSession = undefined; return browserSessionHeaders(); }
       const payload = await response.json().catch(() => null);
+      if (epoch !== sessionEpoch) throw new Error("登录状态已变更");
+      if (response.status === 404 || response.status === 405) { newApiSession = undefined; sessionValidUntil = Date.now() + 300_000; return browserSessionHeaders(); }
       if (response.status === 409 && payload?.code === "AUTH_REFRESH_RACE" && attempt < 3) {
         await new Promise((resolve) => window.setTimeout(resolve, [80, 200, 500][attempt]));
         continue;
       }
-      if (response.status === 401 || response.status === 403) { newApiSession = {}; return browserSessionHeaders(); }
+      if (response.status === 401 || response.status === 403) { newApiSession = {}; sessionValidUntil = Date.now() + 300_000; return browserSessionHeaders(); }
       const bundle = payload?.data;
       if (!response.ok || payload?.success !== true || typeof bundle?.access_token !== "string" || !bundle.access_token ||
           !Number.isSafeInteger(bundle?.user?.id) || bundle.user.id < 1) {
         newApiSession = {};
+        const retryAfter = Number(response.headers.get("Retry-After"));
+        sessionRetryAt = Date.now() + (response.status === 429 ? Math.min(1200, Math.max(30, retryAfter || 60)) * 1000 : 15_000);
         throw new Error("登录状态暂时无法确认");
       }
       newApiSession = { Authorization: `Bearer ${bundle.access_token}`, "New-Api-User": String(bundle.user.id) };
+      const expires = Number(bundle.access_expires_at) * 1000 - 60_000;
+      sessionValidUntil = Math.min(Date.now() + 300_000, Number.isFinite(expires) && expires > 0 ? expires : Date.now() + 60_000);
       return browserSessionHeaders();
     }
     throw new Error("登录状态暂时无法确认");
   };
   sessionRefresh = (async () => navigator.locks
     ? await navigator.locks.request("new-api:auth-refresh", { mode: "exclusive" }, refresh)
-    : await refresh())().finally(() => { sessionRefresh = undefined; });
+    : await refresh())().finally(() => { if (epoch === sessionEpoch) sessionRefresh = undefined; });
   return sessionRefresh;
 }
 
@@ -199,6 +240,7 @@ export async function fetchRankingSnapshot(signal?: AbortSignal): Promise<Rankin
     signal,
   });
   const payload = (await response.json()) as RankingResponse;
+  if (response.status === 401) rejectAuthenticatedSession(headers.Authorization);
   if (!response.ok || payload.success !== true || !Array.isArray(payload.data?.users)) {
     throw new Error(payload.message || "排行榜接口不可用");
   }

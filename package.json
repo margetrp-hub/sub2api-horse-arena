@@ -9,7 +9,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "api": "node server/index.mjs",
     "test:api": "node --test server/*.test.mjs",
-    "test:auth": "node --test tests/auth-return.test.mjs",
+    "test:auth": "node --test tests/auth-return.test.mjs tests/session.test.mjs",
     "test:practice": "node --test tests/practice.test.mjs"
   },
   "dependencies": {
