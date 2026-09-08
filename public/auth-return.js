@@ -61,7 +61,8 @@
     if (stopped || busy || document.visibilityState === "hidden") return;
     if (Date.now() - pending.createdAt > 15 * 60_000) { stop(); return; }
     const pathname = window.location.pathname;
-    if (pathname === pending.path) { finish(); return; }
+    // Some host routers remove the trailing slash from the game home route.
+    if (pathname === pending.path || (pathname === "/game" && pending.path === "/game/")) { finish(); return; }
     // Covers 2FA/provider flows which fall back to the dashboard. Verify the
     // host session before returning; a failed login never counts as success.
     if (!landings.has(pathname) || Date.now() - lastAttempt < 5000 || attempts >= 4) return;

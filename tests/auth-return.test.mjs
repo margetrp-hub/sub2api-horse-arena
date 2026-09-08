@@ -36,6 +36,12 @@ test('all supported game pages can return to their original location', async()=>
     assert.deepEqual(state.redirects,[path]);
   }
 });
+
+test('host router slash normalization still loads the canonical game home', async()=>{
+  const state=setup({pending:{path:'/game/',createdAt:Date.now()}});
+  state.location.pathname='/game';await state.tick();
+  assert.deepEqual(state.redirects,['/game/']);assert.equal(state.stored.has(key),false);
+});
 test('external, malformed, expired and future destinations never navigate', async()=>{
   const invalid=[{path:'https://other.invalid',createdAt:Date.now()},{path:'//other.invalid',createdAt:Date.now()},{path:'/game/lottery.html?token=private',createdAt:Date.now()},{path:'/game/../api/user',createdAt:Date.now()},{path:'/game/',createdAt:Date.now()-900001},{path:'/game/',createdAt:Date.now()+60000}];
   for(const pending of invalid){const state=setup({pending,path:'/dashboard'});await state.tick();assert.deepEqual(state.redirects,[]);assert.equal(state.requests.length,0);}
