@@ -36,3 +36,28 @@
 .points-dialog footer { padding: 14px 22px; border-top: 1px solid #d6dfd2; flex-wrap: wrap; flex-shrink: 0; font-size: 11px; }
 .points-dialog nav { gap: 10px; }
 @media (max-width: 420px) { .points-dialog header, .points-dialog footer { padding: 16px; } .points-ledger { padding-inline: 16px; } .points-summary > strong { font-size: 30px; } }
+
+.points-links { display: flex; align-items: center; gap: 18px; margin-top: 10px; }
+.points-account .points-links button { border: 0; padding: 3px 0; min-height: 30px; background: transparent; color: #c7d6bc; font-size: 11px; font-weight: 500; }
+.points-account .points-links button:hover { color: #e0ffa7; text-decoration: underline; text-underline-offset: 4px; }
+.points-links svg { width: 13px; height: 13px; flex-basis: 13px; }
+.points-help-body { padding: 4px 22px 22px; overflow-y: auto; min-height: 0; font-size: 13px; line-height: 1.75; }
+.points-dialog header .points-eyebrow { margin: 0 0 7px; color: #687a66; font-size: 11px; }
+.points-rules, .points-link-steps { list-style: none; margin: 0; padding: 0; }
+.points-rules li { display: flex; gap: 15px; padding: 18px 0; border-bottom: 1px solid #dce5d6; }
+.points-rules li:last-child { border: 0; padding-bottom: 0; }
+.points-rules li > b { color: #578143; font: 15px/1.8 monospace; }
+.points-rules h3, .points-help-empty h3 { font-size: 14px; line-height: 1.5; margin: 0 0 5px; }
+.points-rules p, .points-help-empty p { margin: 0; color: #5b6b60; }
+.points-identity { margin: 18px 0; padding: 16px; background: #eaf1e2; border-left: 3px solid #80a95f; }
+.points-identity span, .points-identity small { display: block; font-size: 11px; color: #5b6b60; }
+.points-identity strong { display: block; margin: 5px 0; font: 12px/1.65 monospace; overflow-wrap: anywhere; }
+.points-link-steps { list-style: decimal; padding-left: 20px; }
+.points-link-steps li { margin-bottom: 7px; padding-left: 3px; }
+.points-copy-text { width: 100%; min-height: 110px; box-sizing: border-box; resize: vertical; margin-top: 14px; padding: 11px; border: 1px solid #c3d0bb; border-radius: 4px; color: #344c39; background: #fff; font-family: inherit; font-size: 11px; line-height: 1.65; }
+.points-copy-text:focus-visible { outline: 2px solid #6e9656; outline-offset: 2px; }
+.points-help-note { margin: 10px 0 0; color: #687a66; font-size: 11px; }
+.points-help-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.points-help-empty { padding: 24px 0; }
+.points-dialog .points-help-login { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; color: #276852; font-weight: 700; }
+@media (max-width: 420px) { .points-help-body { padding-inline: 16px; } .points-dialog .points-help-actions { width: 100%; } .points-dialog .points-help-actions button { flex: 1; padding-inline: 9px; font-size: 12px; white-space: nowrap; } }
