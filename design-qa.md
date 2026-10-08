@@ -48,6 +48,30 @@ Physical-phone GPU performance, long-session memory behavior and user acceptance
 of the new art direction remain **UNVERIFIED**. There is no deployment, account
 progression, reward integration or replacement of existing production entries.
 
+### Blender material and lighting study
+
+The user requested a Blender trial of this same workstation. The existing scene
+was exported to GLB with 224 meshes, 11 embedded textures, the full 4:3 game
+display and a reference camera. Four browser contact-shadow cards were removed
+so Cycles could calculate real contact shadows.
+
+- Blender 4.5.14 LTS / Cycles rendered successfully on the local GTX 1060 6GB,
+  using 96 samples and denoising. Full view: 1600 x 1312; detail: 1600 x 1216.
+- Material changes distinguish painted character resin, CRT plastic, matte
+  clothing, satin wood and brass. Large area lights provide soft illumination.
+- Full view and detail were visually reviewed: both characters remain in frame,
+  Chinese sign textures survive export, and the CRT retains the complete game
+  image. All 11 images are packed into the editable `.blend` file.
+- This is a static work/inspection pose and a local art study. Blender lighting
+  and procedural materials have not been baked or integrated into the web game.
+
+Reproduce with `tools/blender/export-workstation.mjs` and
+`scripts/render_blender_diorama.py`; see README for commands.
+Evidence: `output/blender/haolema-20261008/workstation-source.json`,
+`blender-render-report.json`, `blender-workstation.png` and
+`blender-workstation-detail.png`. Editable scene: `haolema-workstation.blend`
+in that same directory.
+
 ## Three-Dimensional Lottery: 2026-09-07
 
 Status: **LOCAL-VERIFIED**, prepared for the already authorized frontend release.

@@ -27,6 +27,15 @@ http://127.0.0.1:5173/?api=http://127.0.0.1:8788
 
 挑战复用 `src/practice/rules.ts`，支持按住 / 空格与点按切换；松手上班一秒保分，查岗被抓只丢暂存分，离开页面中止。音效默认关闭，可减少动态效果。小样不请求账号或榜单接口，不保存成长、不发放奖励；像素入口保持独立。美术与验收证据见 [`design-qa.md`](./design-qa.md)。
 
+Blender 材质与灯光试样使用同一场景导出的 GLB，保留小马、牛老板、4:3 游戏屏幕及中文招牌。运行下面的工具生成可编辑 `.blend` 和 Cycles 静帧；模型姿势为上班 / 查岗，尚未生成骨骼动画。工具不进入网页构建。
+
+```powershell
+node tools/blender/export-workstation.mjs
+blender --background --factory-startup --python scripts/render_blender_diorama.py -- --source output/blender/haolema-20261008/workstation-source.glb --output output/blender/haolema-20261008 --samples 64 --width 1600 --detail
+```
+
+导出条件和节点名称见 [`tools/blender/README.md`](./tools/blender/README.md)。本地输出在 `output/blender/haolema-20261008/`，资源打包在 `.blend` 内；输出文件不提交到源码仓库。
+
 2026-09-07 UI 已更新：个人工位、对局计分、下班小票与幸运扭蛋机统一视觉；主入口右侧保留完整 TOP 10，支持键盘选人、断线重试与手机滚动。设计与浏览器证据见 [`design-qa.md`](./design-qa.md)。
 
 `index.html` 和 `game.html` 共用同一套个人工位、挑战规则和结算界面。未上榜或未登录也能开局，公共 TOP 10 保留原有真实用量口径。

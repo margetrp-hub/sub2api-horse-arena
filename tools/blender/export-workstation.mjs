@@ -1,0 +1,57 @@
+import { createServer } from "vite";
+import { chromium } from "playwright";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import fs from "node:fs/promises";
+import crypto from "node:crypto";
+import assert from "node:assert/strict";
+
+const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const output = path.resolve(process.argv[2] || path.join(repo, "output/blender/haolema-20261008"));
+await fs.mkdir(output, { recursive: true });
+const server = await createServer({ configFile: false, root: repo, base: "/", logLevel: "warn", server: { host: "127.0.0.1", port: 0, hmr: false } });
+let browser;
+const errors = [], warnings = [];
+try {
+  await server.listen();
+  const address = server.httpServer.address();
+  browser = await chromium.launch({ headless: true, channel: process.env.CHROME_CHANNEL || "chrome", args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+  const page = await browser.newPage({ viewport: { width: 1100, height: 710 }, deviceScaleFactor: 1, acceptDownloads: true });
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") errors.push(message.text()); else if (message.type() === "warning") warnings.push(message.text()); });
+  await page.goto(`http://127.0.0.1:${address.port}/tools/blender/export.html`);
+  await page.waitForFunction(() => window.exportReady || window.exportError, undefined, { timeout: 60000 });
+  assert.equal(await page.evaluate(() => window.exportError), undefined);
+  await page.screenshot({ path: path.join(output, "source-browser-reference.png") });
+  const downloaded = page.waitForEvent("download", { timeout: 120000 });
+  await page.locator("#export").click();
+  const download = await downloaded;
+  const glbPath = path.join(output, "workstation-source.glb");
+  await download.saveAs(glbPath);
+  await page.waitForFunction(() => window.exportComplete || window.exportError);
+  assert.equal(await page.evaluate(() => window.exportError), undefined);
+  const metadata = await page.evaluate(() => window.exportMetadata);
+  const bytes = await fs.readFile(glbPath);
+  assert.equal(bytes.toString("ascii", 0, 4), "glTF");
+  assert.equal(bytes.readUInt32LE(4), 2);
+  assert.equal(bytes.readUInt32LE(8), bytes.length);
+  assert.equal(bytes.readUInt32LE(16), 0x4e4f534a);
+  const jsonLength = bytes.readUInt32LE(12);
+  const gltf = JSON.parse(bytes.toString("utf8", 20, 20 + jsonLength).trim());
+  assert(gltf.images.length > 0);
+  assert(gltf.images.every(image => Number.isInteger(image.bufferView) && !image.uri));
+  assert(gltf.buffers.every(buffer => !buffer.uri));
+  assert(gltf.nodes.some(node => node.name === "CRT_Game_Screen"));
+  assert(gltf.nodes.some(node => node.name === "Boss"));
+  assert(gltf.materials.some(material => material.name === "CRT_Game_Display"));
+  assert(gltf.cameras.some(camera => camera.type === "orthographic"));
+  assert.equal(errors.length, 0, errors.join("\n"));
+  const sources = {};
+  for (const file of ["src/diorama/OfficeDiorama.ts", "src/diorama/ToyCharacters.ts", "public/assets/screen-real-v4/moba.webp"]) sources[file] = crypto.createHash("sha256").update(await fs.readFile(path.join(repo, file))).digest("hex");
+  const report = { ...metadata, exportedAt: new Date().toISOString(), sources, glb: { path: glbPath, bytes: bytes.length, sha256: crypto.createHash("sha256").update(bytes).digest("hex"), nodes: gltf.nodes.length, meshes: gltf.meshes.length, materials: gltf.materials.length, embeddedImages: gltf.images.length, cameras: gltf.cameras.length, extensionsUsed: gltf.extensionsUsed }, errors, warnings };
+  await fs.writeFile(path.join(output, "workstation-source.json"), JSON.stringify(report, null, 2));
+  console.log(JSON.stringify({ success: true, ...report.glb, roundTrip: report.roundTrip, removedContactShadows: report.removedContactShadows, warnings }, null, 2));
+} finally {
+  await browser?.close();
+  await server.close();
+}
