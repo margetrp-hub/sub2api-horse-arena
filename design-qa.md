@@ -1,5 +1,43 @@
 # Main Arena Design QA
 
+## Miniature 3D Workstation: 2026-10-08
+
+Status: **LOCAL CANDIDATE**. The user approved a playable single-workstation sample
+after discussing a fixed-camera miniature netcafe. This is an independent
+`diorama.html` entry, not a production replacement of the pixel game.
+
+- Warm cream / forest-green room, tiled miniature base, CRT workstation, toy horse
+  and cow supervisor. Both characters have articulated procedural models; typing,
+  slacking, startled recovery and stretching use the existing round state.
+- Preview controls show work, slacking and a timed supervisor visit. A real
+  one-minute challenge reuses `src/practice/rules.ts`; pointer hold, Space and
+  toggle controls, banking, inspection and the receipt remain local practice.
+- Initial full-room framing made the character too small. The reviewed version
+  uses a compact room, an enlarged workstation and a front-quarter camera that
+  reveals the horse's face while retaining the doorway. The phone uses the near
+  hand so the body does not hide it.
+- Desktop layout and the mobile round layout keep the scene, warning, ledger and
+  input available. Sound is opt-in. Reduced motion preserves semantic poses,
+  skips decorative motion and redraws static poses only on state/size changes.
+  The visual loop is capped at 30 fps; rules still integrate real elapsed time.
+- Scene and entry load separately, static meshes batch by material, small details
+  avoid unnecessary shadows, DPR is capped at 1.5, and hidden pages stop rendering.
+  WebGL initialization failure offers a link to the pixel entry.
+- Source rules: 9/9 tests passed. Browser evidence includes an actual 60-second
+  round plus countdown, banking, a catch and receipt; final build checks cover
+  toggle/keyboard/pointer input, native blur cancellation, frozen aborted scores,
+  reduced motion and 320/390px layouts. No account/economy requests are made.
+
+Evidence and exact build/check boundaries:
+[`browser-qa-summary.md`](../../ops/haolema-diorama-20261008/browser-qa-summary.md),
+[`initial real round`](../../ops/haolema-diorama-20261008/browser-qa-report-initial.json),
+[`build regression`](../../ops/haolema-diorama-20261008/browser-qa-report-final.json).
+Screenshots: `output/playwright/diorama-20261008/`.
+
+Physical-phone GPU performance, long-session memory behavior and user acceptance
+of the new art direction remain **UNVERIFIED**. There is no deployment, account
+progression, reward integration or replacement of existing production entries.
+
 ## Three-Dimensional Lottery: 2026-09-07
 
 Status: **LOCAL-VERIFIED**, prepared for the already authorized frontend release.

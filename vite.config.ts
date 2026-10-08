@@ -10,6 +10,7 @@ export default defineConfig(({ command }) => ({
         game: resolve(__dirname, "game.html"),
         station: resolve(__dirname, "station.html"),
         lottery: resolve(__dirname, "lottery.html"),
+        diorama: resolve(__dirname, "diorama.html"),
       },
     },
   },
