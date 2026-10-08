@@ -9,6 +9,10 @@ after discussing a fixed-camera miniature netcafe. This is an independent
 - Warm cream / forest-green room, tiled miniature base, CRT workstation, toy horse
   and cow supervisor. Both characters have articulated procedural models; typing,
   slacking, startled recovery and stretching use the existing round state.
+- User correction: the CRT shows a game match in every character state. It reuses
+  `assets/screen-real-v4/moba.webp` in its native 4:3 aspect ratio, preserving the
+  map, heroes and skill HUD. This is a static game image; the terminal and snake
+  placeholders have been removed. Start waits for the screen texture to load.
 - Preview controls show work, slacking and a timed supervisor visit. A real
   one-minute challenge reuses `src/practice/rules.ts`; pointer hold, Space and
   toggle controls, banking, inspection and the receipt remain local practice.
@@ -33,6 +37,12 @@ Evidence and exact build/check boundaries:
 [`initial real round`](../../ops/haolema-diorama-20261008/browser-qa-report-initial.json),
 [`build regression`](../../ops/haolema-diorama-20261008/browser-qa-report-final.json).
 Screenshots: `output/playwright/diorama-20261008/`.
+Screen correction: production build passed; browser checks confirmed the texture
+loads successfully and remains visible during work, slacking and the supervisor
+visit, with no normal load errors. Missing texture uses the existing
+unavailable-state fallback. Evidence: `screen-content-work-crt.png`,
+`screen-content-slack-crt.png`, `screen-content-boss-workstation.png` and
+`screen-content-resource-fallback.png` in the screenshot directory above.
 
 Physical-phone GPU performance, long-session memory behavior and user acceptance
 of the new art direction remain **UNVERIFIED**. There is no deployment, account

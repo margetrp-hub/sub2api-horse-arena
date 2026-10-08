@@ -344,6 +344,8 @@ async function boot(): Promise<void> {
 try {
   const { OfficeDiorama: Scene } = await import("./OfficeDiorama");
   scene = new Scene(node("scene"));
+  await scene.load();
+  if (closed) return;
   scene.render(performance.now(), { action: "idle", boss: "away" }, reducedMotion);
   node("loading").hidden = true;
   club.dataset.ready = "true";

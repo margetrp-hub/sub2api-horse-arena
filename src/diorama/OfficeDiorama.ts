@@ -26,8 +26,6 @@ export class OfficeDiorama {
   private readonly door = new THREE.Group();
   private readonly pendant = new THREE.Group();
   private readonly screenMaterial = new THREE.MeshBasicMaterial({ toneMapped: false });
-  private readonly workScreen: THREE.CanvasTexture;
-  private readonly gameScreen: THREE.CanvasTexture;
   private lastNow = 0;
   private doorOpen = 0;
   private bossApproach = 0;
@@ -81,9 +79,6 @@ export class OfficeDiorama {
     fill.position.set(6, 5, -2);
     this.scene.add(fill);
 
-    this.workScreen = this.screenTexture(false);
-    this.gameScreen = this.screenTexture(true);
-    this.screenMaterial.map = this.workScreen;
     this.buildRoom();
     this.buildWorkstation();
     this.buildDecorations();
@@ -98,6 +93,17 @@ export class OfficeDiorama {
     this.resizeObserver = new ResizeObserver(this.resize);
     this.resizeObserver.observe(mount);
     this.resize();
+  }
+
+  async load(): Promise<void> {
+    const texture = await new THREE.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}assets/screen-real-v4/moba.webp`);
+    if (this.disposed) { texture.dispose(); return; }
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+    this.textures.add(texture);
+    this.screenMaterial.map = texture;
+    this.screenMaterial.needsUpdate = true;
+    this.needsRender = true;
   }
 
   render(nowMs: number, state: DioramaState, reducedMotion = false): void {
@@ -119,8 +125,6 @@ export class OfficeDiorama {
     this.horse.animate(seconds, state, reducedMotion);
     this.boss.animate(seconds, state, reducedMotion);
     this.pendant.rotation.z = reducedMotion ? 0 : Math.sin(seconds * 0.65) * 0.008;
-    const nextScreen = state.action === "slack" ? this.gameScreen : this.workScreen;
-    if (this.screenMaterial.map !== nextScreen) this.screenMaterial.map = nextScreen;
     this.renderer.render(this.scene, this.camera);
     this.needsRender = false;
   }
@@ -321,7 +325,7 @@ export class OfficeDiorama {
     this.box(monitor, [1.35, 1.08, 0.83], [0, 1.77, 0], 0xd6cfb3, 0.15);
     this.box(monitor, [1.27, 1.03, 0.15], [0, 1.77, 0.405], 0xf0e7cd, 0.105);
     this.box(monitor, [1.085, 0.76, 0.08], [0, 1.81, 0.501], 0x36453f, 0.085);
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.975, 0.652), this.screenMaterial);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.955, 0.71625), this.screenMaterial);
     screen.position.set(0, 1.815, 0.548);
     monitor.add(screen);
     this.box(monitor, [0.075, 0.035, 0.024], [0.455, 1.366, 0.494], 0x8cbe81, 0.008);
@@ -555,40 +559,4 @@ export class OfficeDiorama {
     retired.forEach((geometry) => geometry.dispose());
   }
 
-  private screenTexture(gaming: boolean): THREE.CanvasTexture {
-    return this.canvasTexture(512, 336, (ctx) => {
-      ctx.fillStyle = gaming ? "#263d49" : "#233e37";
-      ctx.fillRect(0, 0, 512, 336);
-      ctx.fillStyle = gaming ? "#dfba67" : "#7fae91";
-      ctx.fillRect(0, 0, 512, 27);
-      ctx.font = "bold 16px monospace";
-      ctx.fillStyle = "#20352f";
-      ctx.fillText(gaming ? "SNAKE.EXE  —  LUNCH BREAK" : "OH! TERMINAL  /  ONLINE", 16, 19);
-      if (gaming) {
-        ctx.strokeStyle = "#345665";
-        ctx.lineWidth = 1;
-        for (let x = 18; x < 512; x += 24) { ctx.beginPath(); ctx.moveTo(x, 41); ctx.lineTo(x, 336); ctx.stroke(); }
-        for (let y = 41; y < 336; y += 24) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke(); }
-        const snake = [[5, 7], [6, 7], [7, 7], [8, 7], [8, 6], [8, 5], [9, 5], [10, 5], [11, 5]];
-        snake.forEach(([x, y], index) => {
-          ctx.fillStyle = index === snake.length - 1 ? "#f2d578" : "#a3c683";
-          ctx.fillRect(18 + x * 24, 41 + y * 24, 21, 21);
-        });
-        ctx.fillStyle = "#de7958";
-        ctx.fillRect(18 + 15 * 24, 41 + 3 * 24, 20, 20);
-        ctx.fillStyle = "#f3e7be";
-        ctx.font = "bold 23px monospace";
-        ctx.fillText("SCORE  0080", 27, 70);
-      } else {
-        ctx.font = "18px monospace";
-        const lines = ["> connecting to work...", "  all systems nominal", "> npm run make-a-living", "", "  [OK] coffee loaded", "  [OK] boss not found", "", "> awaiting inspiration_"];
-        lines.forEach((line, index) => {
-          ctx.fillStyle = index === 5 ? "#e1c577" : "#b8d1a1";
-          ctx.fillText(line, 25, 64 + index * 30);
-        });
-      }
-      ctx.fillStyle = "rgba(3,15,13,0.075)";
-      for (let y = 0; y < 336; y += 4) ctx.fillRect(0, y, 512, 1);
-    });
-  }
 }
