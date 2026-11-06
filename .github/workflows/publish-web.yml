@@ -12,7 +12,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/verify.yml
+
   publish:
+    needs: verify
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -69,7 +74,9 @@ jobs:
           docker push "$image"
           docker save --output release/api-image.tar "$image"
           image_id=$(docker image inspect "$image" --format '{{.Id}}')
-          jq -n --arg imageRef "$image" --arg imageId "$image_id" --arg revision "$GITHUB_SHA" '{imageRef:$imageRef,imageId:$imageId,revision:$revision}' > release/api-registry.json
+          image_ref=$(docker image inspect "$image" --format '{{index .RepoDigests 0}}')
+          test -n "$image_ref"
+          jq -n --arg imageRef "$image_ref" --arg imageId "$image_id" --arg revision "$GITHUB_SHA" '{imageRef:$imageRef,imageId:$imageId,revision:$revision}' > release/api-registry.json
           (cd release && sha256sum api-image.tar >> checksums.txt)
       - name: Upload deployment artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
