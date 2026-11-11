@@ -349,7 +349,9 @@ export class PersonalWorkstation {
       this.setExpanded(this.root.classList.contains("practice-expanded"));
     }, { signal });
     document.addEventListener("visibilitychange", () => {
+      window.cancelAnimationFrame(this.frame);
       if (document.hidden) this.interrupt("离开页面，本局已中止");
+      else if (this.visible) this.frame = window.requestAnimationFrame(this.tick);
     }, { signal });
   }
 
@@ -379,7 +381,7 @@ export class PersonalWorkstation {
   }
 
   private tick = (): void => {
-    if (!this.visible || this.abortController.signal.aborted) return;
+    if (!this.visible || document.hidden || this.abortController.signal.aborted) return;
     const now = performance.now();
     const state = this.round?.advance(now);
     if (state) this.render(state);

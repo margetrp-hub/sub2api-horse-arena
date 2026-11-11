@@ -54,6 +54,10 @@ let currentPlayers: Player[] = [];
 let rankingState: "loading" | "loaded" | "stale" | "unavailable" = "loading";
 let rankingSnapshot: RankingSnapshot | undefined;
 let rankingLoading = false;
+let closed = false;
+let workstationVisible = false;
+let rankingController: AbortController | undefined;
+let rankingTimer: number | undefined;
 
 const game = new GameApp(gameMount, {
   players: idlePlayers,
@@ -66,8 +70,9 @@ const game = new GameApp(gameMount, {
 });
 const personalWorkstation = new PersonalWorkstation(gameMount.parentElement!, {
   onVisibilityChange: (visible) => {
+    workstationVisible = visible;
     gameMount.hidden = visible;
-    game.setPaused(visible);
+    game.setPaused(visible || document.hidden || closed);
   },
 });
 
@@ -111,14 +116,16 @@ function playerKey(player: Player): string {
 renderPanel();
 
 async function loadRankingSnapshot(): Promise<void> {
-  if (rankingLoading) return;
+  if (rankingLoading || closed || document.hidden) return;
   rankingLoading = true;
-  if (!rankingSnapshot) rankingState = "loading";
-  renderPanel();
+  if (!rankingSnapshot) { rankingState = "loading"; renderPanel(); }
   const controller = new AbortController();
+  rankingController = controller;
   const timeout = window.setTimeout(() => controller.abort(), 12000);
   try {
-    rankingSnapshot = await fetchRankingSnapshot(controller.signal);
+    const snapshot = await fetchRankingSnapshot(controller.signal);
+    if (closed || controller.signal.aborted) return;
+    rankingSnapshot = snapshot;
     personalWorkstation.setIdentity(rankingSnapshot.currentUser);
     currentPlayers = rankingSnapshot.players;
     rankingState = "loaded";
@@ -131,6 +138,9 @@ async function loadRankingSnapshot(): Promise<void> {
     game.setPlayers(currentPlayers.length > 0 ? currentPlayers : emptyPlayers());
     renderPanel();
   } catch {
+    // A request timeout must leave loading and expose the existing retry action.
+    // Only a departed page discards the result entirely.
+    if (closed) return;
     rankingState = rankingSnapshot ? "stale" : "unavailable";
     if (!rankingSnapshot) {
       personalWorkstation.setIdentity(null);
@@ -144,12 +154,32 @@ async function loadRankingSnapshot(): Promise<void> {
   }
 }
 
-void loadRankingSnapshot();
 const configuredPollMs = Number(window.OH_HAOLEMA_RUNTIME?.pollMs);
 const pollMs = Number.isFinite(configuredPollMs) && configuredPollMs >= 15_000
   ? configuredPollMs
   : 30_000;
-window.setInterval(() => void loadRankingSnapshot(), pollMs);
+function syncActivity(): void {
+  window.clearInterval(rankingTimer);
+  rankingTimer = undefined;
+  game.setPaused(closed || document.hidden || workstationVisible);
+  if (closed || document.hidden) return;
+  void loadRankingSnapshot();
+  rankingTimer = window.setInterval(() => void loadRankingSnapshot(), pollMs);
+}
+document.addEventListener('visibilitychange', syncActivity);
+window.addEventListener('pagehide', event => {
+  window.clearInterval(rankingTimer);
+  rankingController?.abort();
+  game.setPaused(true);
+  if (event.persisted) return;
+  closed = true;
+  document.removeEventListener('visibilitychange', syncActivity);
+  personalWorkstation.destroy();
+  pointsAccount.destroy();
+  game.destroy();
+});
+window.addEventListener('pageshow', event => { if (event.persisted) syncActivity(); });
+syncActivity();
 
 game.start()
   .then(() => {

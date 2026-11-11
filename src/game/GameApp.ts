@@ -16,6 +16,7 @@ export class GameApp {
   private scene?: NetbarScene;
   private players: Player[];
   private paused = false;
+  private destroyed = false;
 
   constructor(private readonly mount: HTMLElement, private readonly options: GameAppOptions) {
     this.players = options.players;
@@ -27,7 +28,9 @@ export class GameApp {
       backgroundColor: 0x070504,
       backgroundAlpha: 0,
       resolution: 1,
+      autoStart: false,
     });
+    this.app.ticker.maxFPS = 30;
     this.app.view.className = "pixi-view";
     this.mount.appendChild(this.app.view);
   }
@@ -44,6 +47,7 @@ export class GameApp {
     ];
     if (manifest.boss) assetUrls.push(manifest.boss.image);
     await Assets.load(assetUrls);
+    if (this.destroyed) return;
     this.scene = new NetbarScene({
       ...this.options,
       renderer: this.app.renderer,
@@ -56,7 +60,7 @@ export class GameApp {
     this.scene.update(performance.now());
     this.app.renderer.render(this.app.stage);
     this.app.ticker.add(() => this.scene?.update(performance.now()));
-    if (this.paused) this.app.stop();
+    this.setPaused(this.paused);
   }
 
   selectRank(rank: number): void {
@@ -70,11 +74,13 @@ export class GameApp {
 
   setPaused(paused: boolean): void {
     this.paused = paused;
+    if (!this.scene || this.destroyed) return;
     if (paused) this.app.stop();
     else this.app.start();
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.app.destroy(true, { children: true, texture: false, baseTexture: false });
   }
 }
