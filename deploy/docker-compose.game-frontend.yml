@@ -4,7 +4,8 @@ services:
       context: ..
       dockerfile: deploy/game-frontend.Dockerfile
       args:
-        GAME_BASE_PATH: /game/
+        GAME_BASE_PATH: /
+        GAME_SOURCE: ${USAGE_SOURCE:-newapi}
     ports:
       - "127.0.0.1:8098:8080"
     restart: unless-stopped

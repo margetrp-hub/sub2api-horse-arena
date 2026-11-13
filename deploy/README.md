@@ -16,7 +16,7 @@
 USAGE_SOURCE=newapi
 ```
 
-NewAPI 需要 `NEWAPI_ACCESS_TOKEN` 和数字形式的 `NEWAPI_USER_ID`。适配器请求
+NewAPI 需要 `NEWAPI_BASE_URL`、`NEWAPI_ACCESS_TOKEN` 和数字形式的 `NEWAPI_USER_ID`。适配器请求
 `GET /api/data/users`，并发送 `Authorization: Bearer ...` 与 `New-Api-User`。
 
 Sub2API 使用管理员 API Key 或 JWT：
@@ -40,8 +40,7 @@ SUB2API_ADMIN_API_KEY=...
 cp deploy/game-api.env.example deploy/game-api.env
 chmod 600 deploy/game-api.env
 
-docker compose -f deploy/docker-compose.game-api.yml up -d --build
-docker compose -f deploy/docker-compose.game-frontend.yml up -d --build
+docker compose --env-file deploy/game-api.env -f deploy/docker-compose.game-api.yml -f deploy/docker-compose.game-frontend.yml up -d --build
 
 curl -fsS http://127.0.0.1:8788/healthz
 curl -fsS http://127.0.0.1:8098/healthz
@@ -51,6 +50,8 @@ systemctl reload nginx
 
 外层 Nginx 的 `server_name`、证书路径和游戏域名需要按目标环境填写。推荐给
 游戏使用独立子域名，不要把 `/api/*` 规则覆盖现有 Sub2API 的 `/api/v1/*`。
+
+此 Compose 对应上述独立域名根路径，前端构建使用 `/`，并从同一 env 文件选择 New API / Sub2API。若挂载到已有网关的 `/game/`，需把构建参数 `GAME_BASE_PATH` 改为 `/game/`，由反向代理剥离此前缀，再按 `runtime-config.sub2api.js` 设置 `/game-api/ranking`；不能将根路径和子路径配置混用。
 
 ## 验收
 
