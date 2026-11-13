@@ -1,5 +1,25 @@
 # Main Arena Design QA
 
+## Pixel screens and UI polish: 2026-11-14
+
+Status: locally verified; production has not been changed.
+
+- The Pixi entry and personal workstation now load the approved `screen-real-v4`
+  artwork into the CRT quadrilateral. Each of the ten themes has local content
+  animation (cursor, graph activity, spell, crosshair, audio, download, ranking,
+  card selection, screensaver or water), with a fixed camera and intact artwork.
+- Speech is rendered as page-sized DOM text, clamped to the scene. Repeated clicks
+  replace the previous phrase; leaving the scene clears it. At 390px the phrase
+  remains readable at 14px with one active bubble.
+- Ambient sprites share the scene's clock; hidden scenes stop rendering. Reduced
+  motion freezes decorative frames while retaining click feedback. Two captures
+  650ms apart in reduced-motion mode were byte-identical.
+- Local checks: all 59 practice/API/auth tests and TypeScript/Vite build passed.
+  Browser checks covered 1440px and 390px, artwork in the actual scene, repeated
+  character clicks, personal/public switching, and ranking success → upstream
+  503 with prior rows retained → successful retry. Ranking data was an isolated
+  test fixture; no production account, payment or points were changed.
+
 ## Miniature 3D Workstation: 2026-10-08
 
 Status: **LOCAL CANDIDATE**. The user approved a playable single-workstation sample

@@ -1,5 +1,5 @@
 import { Application, Assets, Container, Rectangle, SCALE_MODES, Sprite, Texture } from "pixi.js";
-import { LayeredScreen } from "../game/entities/LayeredScreen";
+import { LayeredScreen, SCREEN_ART } from "../game/entities/LayeredScreen";
 import { loadStationManifest, type CharacterAsset } from "../game/stationManifest";
 import type { RoundSnapshot } from "./rules";
 
@@ -38,6 +38,7 @@ export class PracticeScene {
     const gaming = manifest.horses.gaming ?? working;
     await Assets.load([
       manifest.background, manifest.workstation.image, working.image, gaming.image,
+      SCREEN_ART.api, SCREEN_ART.moba,
       ...(manifest.boss ? [manifest.boss.image] : []),
     ]);
     if (this.disposed) return;
@@ -83,7 +84,7 @@ export class PracticeScene {
     this.gaming!.texture = this.gamingFrames[frame % this.gamingFrames.length];
     this.screens[0].view.visible = !gaming;
     this.screens[1].view.visible = Boolean(gaming);
-    this.screens[gaming ? 1 : 0].update(time);
+    this.screens[gaming ? 1 : 0].update(time, reducedMotion);
     if (this.boss) {
       this.boss.visible = Boolean(state && state.boss !== "away" && state.phase === "playing");
       this.boss.texture = this.bossFrames[frame % this.bossFrames.length];

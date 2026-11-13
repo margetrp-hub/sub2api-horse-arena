@@ -1,5 +1,23 @@
 html, body, #app { background: #181d1c; color: #f2f4ed; font-family: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; }
+.game-root { position: relative; }
+.worker-phrase {
+  position: absolute; z-index: 6; width: max-content; max-width: min(260px, calc(100% - 24px));
+  padding: 11px 14px; border: 2px solid #453421; border-radius: 8px;
+  background: #fff2d5; color: #302317; box-shadow: 0 3px 0 #21150b66, 0 8px 20px #0003;
+  font-size: 14px; line-height: 1.65; font-weight: 600; overflow-wrap: anywhere;
+  text-align: left; pointer-events: none; transition: opacity 180ms ease;
+  animation: phrase-enter 160ms ease-out;
+}
+.worker-phrase::after {
+  content: ""; position: absolute; left: var(--phrase-tail); width: 10px; height: 10px;
+  background: #fff2d5; border-right: 2px solid #453421; border-bottom: 2px solid #453421;
+  transform: translateX(-50%) rotate(45deg); bottom: -7px;
+}
+.worker-phrase[data-side="below"]::after { top: -7px; bottom: auto; transform: translateX(-50%) rotate(225deg); }
+.worker-phrase.is-leaving { opacity: 0; }
+@keyframes phrase-enter { from { opacity: 0; translate: 0 4px; } to { opacity: 1; translate: 0 0; } }
 .game-shell, .game-shell * { letter-spacing: 0; }
+.game-shell { font-variant-numeric: tabular-nums; }
 .game-shell {
   width: min(100%, 1680px); height: 100dvh; max-height: none; padding: 0;
   grid-template-columns: minmax(0, 1fr) 330px; grid-template-areas: "game rank";
@@ -99,8 +117,12 @@ html, body, #app { background: #181d1c; color: #f2f4ed; font-family: "Microsoft 
   .game-shell .board-empty { min-height: 190px; height: auto; }
   .board-checkin { margin-top: 8px; }
   .office-scene-heading { top: 18px; left: 16px; }
-  .office-scene-heading strong { font-size: 18px; }
+  .office-scene-heading strong { font-size: 16px; }
   .office-scene-heading > span { font-size: 10px; }
+  .game-shell .practice-launcher { top: 12px; right: 12px; min-height: 40px; padding: 7px 11px; font-size: 12px; }
+  .game-shell .board-player > strong { font-size: 14px; }
+  .game-shell .board-player > span, .game-shell .board-summary > span, .board-header > em { font-size: 12px; }
+  .game-shell .board-sync { font-size: 10px !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .game-shell *, .game-shell *::before, .game-shell *::after { animation: none !important; transition: none !important; }

@@ -23,7 +23,7 @@ Sub2API 使用管理员 API Key 或 JWT：
 
 ```text
 USAGE_SOURCE=sub2api
-SUB2API_BASE_URL=https://ohlaoo.com
+SUB2API_BASE_URL=https://sub2api.example.com
 SUB2API_ADMIN_API_KEY=...
 ```
 
@@ -80,7 +80,9 @@ curl -fsS https://game.example.com/api/ranking?period=week\&limit=10
 
 ## 正式积分
 
-积分所有权在 ErDai Core。配置独立的 `ERDAI_POINTS_SITE_TOKEN`、`ERDAI_POINTS_BASE_URL` 和精确的 `CORS_ORIGINS`；Core 对应凭据必须绑定本站 transport 和 HTTPS origin。仅代理 `/api/points/account`、`/api/points/checkin` 到游戏适配器，不覆盖主站其他 API。保持 `LOTTERY_PREVIEW_ENABLED=0`。
+积分桥是可选扩展，不是运行小游戏或排行榜的前置条件。现有实现使用 ErDai Core 的 `/points-bridge/v1/site/*` 协议，不是 New API / Sub2API 的通用余额接口；未配置时账户积分不可用，本地练习仍可运行。
+
+使用该扩展时，配置独立的 `ERDAI_POINTS_SITE_TOKEN`、`ERDAI_POINTS_BASE_URL` 和精确的 `CORS_ORIGINS`；Core 对应凭据必须绑定本站 transport 和 HTTPS origin。仅代理 `/api/points/account`、`/api/points/checkin` 到游戏适配器，不覆盖主站其他 API。保持 `LOTTERY_PREVIEW_ENABLED=0`。
 
 游戏后端通过主站的真实 `/api/user/self`（NewAPI）或 `/api/v1/auth/me`（Sub2API）验证当前用户，然后读取积分。新版 NewAPI 页面通过其既有 refresh cookie 流程取得内存令牌；令牌不写入本地存储。首次主动开通零余额账户，签到使用 Core 的北京时间日界和奖励配置，流水支持分页。浏览器不能指定用户、余额或奖励值。原本机演示积分不进入真实账本；经管理员核验关联的身份共用余额和每日签到资格。
 

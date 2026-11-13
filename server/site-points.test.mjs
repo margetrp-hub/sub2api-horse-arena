@@ -5,7 +5,7 @@ import { createApp, fetchCurrentNewApiUser, getConfig } from "./index.mjs";
 import { createSitePointsService } from "./site-points.mjs";
 
 const account = { accountId: "pa_test", balance: 10, day: "2026-09-07", checkedIn: true, checkInPoints: 10, checkInEnabled: true, linked: false, entries: [{ id: "entry", type: "check_in", points: 10, createdAt: "2026-09-07T01:00:00Z", note: "private note" }], limit: 20, offset: 0, hasMore: false };
-const config = getConfig({ ERDAI_POINTS_BASE_URL: "https://points.test", ERDAI_POINTS_SITE_TOKEN: "test-scoped-site-credential-1234567890", CORS_ORIGINS: "https://game.test", LOTTERY_PREVIEW_ENABLED: "1" });
+const config = getConfig({ NEWAPI_BASE_URL: "https://newapi.test", ERDAI_POINTS_BASE_URL: "https://points.test", ERDAI_POINTS_SITE_TOKEN: "test-scoped-site-credential-1234567890", CORS_ORIGINS: "https://game.test", LOTTERY_PREVIEW_ENABLED: "1" });
 
 test("site service sends only verified identity and strips private ledger fields", async () => {
   let calls = 0;

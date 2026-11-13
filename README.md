@@ -4,6 +4,17 @@
 牛老板使用分层图片资产；排行榜通过独立 Node 适配器读取近 7 日 Token 消耗。
 幸运扭蛋机使用 Three.js 和 cannon-es，支持触摸/鼠标旋转、旋钮试玩、胶囊碰撞与出仓动画。
 
+项目在本仓库单线维护，使用 [MIT 许可证](./LICENSE)。不需要另装游戏管理后台、注册体系或充值系统；保留静态游戏和必要的 Node 服务，账号与 Token 用量来自已有网关。素材与依赖说明见 [NOTICE.md](./NOTICE.md)。
+
+| 使用方式 | 需要配置 | 当前支持范围 |
+| --- | --- | --- |
+| 本地试玩 | 无 | 个人工位、一分钟挑战、机器试玩；不产生账户积分 |
+| Sub2API | 网关地址、服务端管理员只读凭据 | 用户身份、近 7 日榜单、个人排名 |
+| New API | 网关地址、服务端管理员 Token 和用户 ID | 用户身份、近 7 日榜单、个人排名 |
+| 账户积分扩展 | 可选积分桥地址与站点凭据 | 现有积分桥协议；不是通用网关余额兑换 |
+
+不配置上游也能试玩；榜单会明确提示未连接。真实抽奖与余额兑换默认关闭，不能用试玩动画代表到账。
+
 ## 本地运行
 
 ```bash
@@ -12,6 +23,14 @@ npm run dev
 ```
 
 打开 <http://127.0.0.1:5173/>。配置可用的排名适配器后，页面显示真实近 7 日榜单并每 30 秒刷新；上游不可用时显示明确的不可用状态，不使用演示排名。个人工位可独立试玩，不要求先启动适配器。
+
+接入自己的网关时，复制 `deploy/game-api.env.example` 为 `deploy/game-api.env`，选择 `USAGE_SOURCE` 并填写对应地址和服务端凭据，然后在另一个终端启动（Node.js 22 或更新版本）：
+
+```bash
+node --env-file=deploy/game-api.env server/index.mjs
+```
+
+New API 保留默认前端配置；Sub2API 将 `public/runtime-config.js` 中的 `source` 改为 `sub2api`。管理员凭据只放在上述服务端环境文件，不能写入 runtime-config。个人身份复用主站会话的同域部署与登录返回设置见[部署说明](./deploy/README.md)。
 
 本地接 mock 或真实适配器时，可用运行时配置或 URL 参数：
 
@@ -69,7 +88,7 @@ GET /api/ranking?period=week
 
 适配器支持两种数据源：
 
-- `USAGE_SOURCE=newapi`：读取 YHOO NewAPI 的 `/api/data/users`。
+- `USAGE_SOURCE=newapi`：读取所配置 New API 的 `/api/data/users`。
 - `USAGE_SOURCE=sub2api`：读取 Sub2API 管理员 dashboard ranking/trend，并在
   服务端按 `tokens` 排序，而不是沿用默认费用排序。
 
@@ -83,6 +102,7 @@ GET /api/ranking?period=week
 ```bash
 npm run test:practice
 npm run test:api
+npm run test:auth
 npm run build
 ```
 

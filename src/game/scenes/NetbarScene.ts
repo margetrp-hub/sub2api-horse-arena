@@ -13,6 +13,7 @@ import { randomWorkerPhrase } from "../../data/workerPhrases";
 type NetbarSceneOptions = {
   renderer: IRenderer;
   manifest: StationManifest;
+  popupMount: HTMLElement;
   players: Player[];
   onPlayerSelect: (player: Player) => void;
   onBossHit: (hits: number) => void;
@@ -20,7 +21,6 @@ type NetbarSceneOptions = {
 
 export class NetbarScene extends Container {
   private readonly stations: LayeredWorkstation[] = [];
-  private readonly effectsLayer = new Container();
   private readonly backLayer = new Container();
   private readonly frontLayer = new Container();
   private readonly popups: WorkerPhrasePopup[] = [];
@@ -31,6 +31,7 @@ export class NetbarScene extends Container {
   private chatterCursor = 0;
   private nextChatterAt = 0;
   private activeOfficeEvent: OfficeEventType | null = null;
+  private readonly reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   constructor(private readonly options: NetbarSceneOptions) {
     super();
     const background = Sprite.from(options.manifest.background);
@@ -40,10 +41,10 @@ export class NetbarScene extends Container {
 
     this.addChild(background, this.ambient);
     if (options.manifest.boss) {
-      this.boss = new GeneratedCowBoss(options.manifest.boss, options.onBossHit);
+      this.boss = new GeneratedCowBoss(options.manifest.boss, options.onBossHit, (text) => this.showPhrase(text, 850, 145));
       this.addChild(this.boss);
     }
-    this.addChild(this.backLayer, this.frontLayer, this.effectsLayer, this.officeEvents);
+    this.addChild(this.backLayer, this.frontLayer, this.officeEvents);
     this.createStations();
   }
 
@@ -66,15 +67,16 @@ export class NetbarScene extends Container {
   }
 
   update(elapsedMs: number): void {
-    const officeEvent = this.officeEvents.update(elapsedMs);
+    const officeEvent = this.reducedMotion.matches ? null : this.officeEvents.update(elapsedMs);
+    this.officeEvents.visible = Boolean(officeEvent);
     if (officeEvent !== this.activeOfficeEvent) {
       this.activeOfficeEvent = officeEvent;
       this.applyOfficeEvent(officeEvent);
     }
-    this.stations.forEach((station) => station.update(elapsedMs));
-    this.ambient.update(elapsedMs);
-    this.boss?.update(elapsedMs);
-    this.showAmbientChatter(elapsedMs);
+    this.stations.forEach((station) => station.update(elapsedMs, this.reducedMotion.matches));
+    this.ambient.update(this.reducedMotion.matches ? 0 : elapsedMs);
+    this.boss?.update(elapsedMs, this.reducedMotion.matches);
+    if (!this.reducedMotion.matches) this.showAmbientChatter(elapsedMs);
     for (let index = this.popups.length - 1; index >= 0; index -= 1) {
       const popup = this.popups[index];
       if (!popup.update(elapsedMs)) {
@@ -82,6 +84,16 @@ export class NetbarScene extends Container {
         popup.destroy();
       }
     }
+  }
+
+  clearPhrases(): void {
+    this.popups.splice(0).forEach((popup) => popup.destroy());
+    this.nextChatterAt = 0;
+  }
+
+  destroy(options?: boolean | { children?: boolean; texture?: boolean; baseTexture?: boolean }): void {
+    this.clearPhrases();
+    super.destroy(options);
   }
 
   private createStations(): void {
@@ -131,18 +143,14 @@ export class NetbarScene extends Container {
     const anchor = station.popupAnchor();
     const phrase = randomWorkerPhrase(player.mode, this.previousPhrases.get(player.rank));
     this.previousPhrases.set(player.rank, phrase);
-    const popup = new WorkerPhrasePopup(
-      phrase,
-      anchor.x,
-      anchor.y,
-      player.rank <= 3 ? 0xf3b43f : 0x63e990,
-    );
-    if (this.popups.length >= 2) {
-      const previous = this.popups.shift();
-      previous?.destroy();
-    }
+    this.showPhrase(phrase, anchor.x, anchor.y);
+  }
+
+  private showPhrase(text: string, x: number, y: number): void {
+    this.popups.splice(0).forEach((previous) => previous.destroy());
+    const popup = new WorkerPhrasePopup(text, x, y, this.options.popupMount);
     this.popups.push(popup);
-    this.effectsLayer.addChild(popup);
+    this.nextChatterAt = performance.now() + 11000;
   }
 
 }

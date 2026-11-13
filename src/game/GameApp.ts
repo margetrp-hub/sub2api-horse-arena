@@ -4,6 +4,7 @@ import { WORLD } from "./constants";
 import { ASSET_LIST } from "./constants";
 import { NetbarScene } from "./scenes/NetbarScene";
 import { loadStationManifest } from "./stationManifest";
+import { SCREEN_ART } from "./entities/LayeredScreen";
 
 type GameAppOptions = {
   players: Player[];
@@ -41,6 +42,7 @@ export class GameApp {
       manifest.background,
       manifest.workstation.image,
       ...ASSET_LIST,
+      ...Object.values(SCREEN_ART),
       ...Object.values(manifest.horses)
         .filter((asset) => asset !== undefined)
         .map((asset) => asset.image),
@@ -52,6 +54,7 @@ export class GameApp {
       ...this.options,
       renderer: this.app.renderer,
       manifest,
+      popupMount: this.mount,
       players: this.players,
     });
     this.app.stage.addChild(this.scene);
@@ -75,7 +78,10 @@ export class GameApp {
   setPaused(paused: boolean): void {
     this.paused = paused;
     if (!this.scene || this.destroyed) return;
-    if (paused) this.app.stop();
+    if (paused) {
+      this.scene.clearPhrases();
+      this.app.stop();
+    }
     else this.app.start();
   }
 

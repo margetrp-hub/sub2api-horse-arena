@@ -67,13 +67,14 @@ export class LayeredWorkstation extends Container {
     this.horse.animationSpeed = this.horseFps() / 60;
     this.horse.position.set(-220, 80);
     this.horse.scale.set(1.75);
-    this.horse.gotoAndPlay(options.index % this.horse.totalFrames);
+    this.horse.autoUpdate = false;
+    this.horse.gotoAndStop(options.index % this.horse.totalFrames);
     this.horseBaseY = this.horse.y;
 
-    const rankLabel = pixelText(String(options.index + 1).padStart(2, "0"), 72, 0x0b0805);
+    const rankLabel = pixelText(String(options.index + 1).padStart(2, "0"), 64, 0xffe086);
     rankLabel.position.set(677, 952);
     const tokenLabel = pixelText(formatTokens(options.player.tokens), 58, 0xffe086);
-    tokenLabel.position.set(770, 955);
+    tokenLabel.position.set(790, 955);
     this.drawBadge();
     this.drawPodium();
 
@@ -99,8 +100,10 @@ export class LayeredWorkstation extends Container {
     this.screen.setOfficeEvent(event);
   }
 
-  update(elapsedMs: number): void {
-    this.screen.update(elapsedMs);
+  update(elapsedMs: number, reducedMotion = false): void {
+    this.screen.update(elapsedMs, reducedMotion);
+    elapsedMs = reducedMotion ? 0 : elapsedMs;
+    this.horse.gotoAndStop(Math.floor(elapsedMs * this.horseFps() / 1000 + this.options.index) % this.horse.totalFrames);
     const speed = this.player.mode === "sleep" ? 430 : this.player.mode === "gaming" ? 125 : 165;
     const amplitude = this.player.mode === "sleep" ? 1 : this.player.mode === "gaming" ? 2 : 1;
     const eventAmplitude = this.officeEvent === "inspection"
@@ -123,8 +126,8 @@ export class LayeredWorkstation extends Container {
 
   popupAnchor(): { x: number; y: number } {
     return {
-      x: this.x + 690 * this.options.scale,
-      y: this.y - (this.options.slot.row === "back" ? 20 : 34),
+      x: this.x + 380 * this.options.scale,
+      y: this.y + 300 * this.options.scale,
     };
   }
 

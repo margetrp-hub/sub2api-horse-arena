@@ -11,6 +11,20 @@ import {
 } from "./index.mjs";
 import { createLotteryService } from "./lottery.mjs";
 
+test("a fresh installation requires its own gateway address before contacting an upstream", async () => {
+  for (const source of ["newapi", "sub2api"]) {
+    const config = getConfig({
+      USAGE_SOURCE: source,
+      NEWAPI_ACCESS_TOKEN: "test-only-token",
+      NEWAPI_USER_ID: "1",
+      SUB2API_ADMIN_API_KEY: "test-only-admin-key",
+    });
+    assert.equal(config.baseUrl, "");
+    assert.equal(config.sub2ApiBaseUrl, "");
+    await assert.rejects(fetchUsageData(config, { start: 0, end: 1 }), /not configured/);
+  }
+});
+
 test("ranking endpoint returns masked normalized data and caches upstream reads", async () => {
   let upstreamCalls = 0;
   const now = Math.floor(Date.now() / 1000);

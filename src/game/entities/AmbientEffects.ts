@@ -11,7 +11,8 @@ function animatedSheet(
   const sprite = new AnimatedSprite(texturesFromHorizontalSheet(source, width, height, 12));
   sprite.texture.baseTexture.scaleMode = SCALE_MODES.NEAREST;
   sprite.animationSpeed = speed;
-  sprite.play();
+  sprite.autoUpdate = false;
+  sprite.gotoAndStop(0);
   return sprite;
 }
 
@@ -50,9 +51,13 @@ export class AmbientEffects extends Container {
   }
 
   update(elapsedMs: number): void {
+    for (const child of this.children) {
+      const sprite = child as AnimatedSprite;
+      sprite.gotoAndStop(Math.floor(elapsedMs * sprite.animationSpeed * 60 / 1000) % sprite.totalFrames);
+    }
     this.dust.forEach((sprite, index) => {
       sprite.alpha = 0.16 + Math.sin(elapsedMs / 1300 + index * 1.7) * 0.04;
-      sprite.x += Math.sin(elapsedMs / 1700 + index) * 0.02;
+      sprite.x = (index === 0 ? 10 : 632) + Math.sin(elapsedMs / 1700 + index) * 2;
     });
   }
 
@@ -73,7 +78,7 @@ export class AmbientEffects extends Container {
     sprite.width = width;
     sprite.height = height;
     sprite.alpha = 0.16;
-    sprite.gotoAndPlay(startFrame);
+    sprite.gotoAndStop(startFrame);
     return sprite;
   }
 }

@@ -42,10 +42,10 @@ export function getConfig(env = process.env) {
     pointsReadToken: String(env.ERDAI_POINTS_READ_TOKEN || "").trim(),
     pointsSiteToken: String(env.ERDAI_POINTS_SITE_TOKEN || "").trim(),
     pointsIdentityInstance: String(env.ERDAI_POINTS_IDENTITY_INSTANCE || "").trim(),
-    baseUrl: trimTrailingSlash(env.NEWAPI_BASE_URL || "https://api.yhoo.lol"),
+    baseUrl: trimTrailingSlash(env.NEWAPI_BASE_URL || ""),
     accessToken: String(env.NEWAPI_ACCESS_TOKEN || "").trim(),
     userId: String(env.NEWAPI_USER_ID || "").trim(),
-    sub2ApiBaseUrl: trimTrailingSlash(env.SUB2API_BASE_URL || "https://ohlaoo.com"),
+    sub2ApiBaseUrl: trimTrailingSlash(env.SUB2API_BASE_URL || ""),
     sub2ApiAdminApiKey: String(env.SUB2API_ADMIN_API_KEY || "").trim(),
     sub2ApiAccessToken: String(
       env.SUB2API_ACCESS_TOKEN || env.SUB2API_JWT || "",
@@ -77,9 +77,9 @@ export function getConfig(env = process.env) {
 
 function isConfigured(config) {
   if (config.source === "sub2api") {
-    return config.sub2ApiAdminApiKey !== "" || config.sub2ApiAccessToken !== "";
+    return Boolean(config.sub2ApiBaseUrl && (config.sub2ApiAdminApiKey || config.sub2ApiAccessToken));
   }
-  return config.accessToken !== "" && /^\d+$/.test(config.userId);
+  return Boolean(config.baseUrl && config.accessToken && /^\d+$/.test(config.userId));
 }
 
 function jsonResponse(res, status, body, headers = {}) {
