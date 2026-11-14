@@ -1,0 +1,21 @@
+services:
+  game-web:
+    build:
+      context: .
+      target: web
+    ports:
+      - "127.0.0.1:${GAME_PORT:-8098}:80"
+    environment:
+      USAGE_SOURCE: ${USAGE_SOURCE:-newapi}
+    depends_on:
+      - game-api
+    restart: unless-stopped
+  game-api:
+    build:
+      context: .
+      target: api
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8788
+    restart: unless-stopped
